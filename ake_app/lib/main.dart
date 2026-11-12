@@ -93,13 +93,10 @@ class _ShellState extends State<Shell> {
                 ListTile(
                   leading: const Icon(Icons.local_shipping, color: teal),
                   title: const Text('پنل پیک'),
+                  subtitle: const Text('پیش‌نمایش مأموریت‌ها'),
                   onTap: () {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('پنل پیک با API امن وردپرس فعال خواهد شد.'),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CourierPanel()));
                   },
                 ),
               ],
@@ -283,4 +280,97 @@ String clean(String s)=>s.replaceAll(RegExp(r'<[^>]*>'),'').replaceAll('&amp;','
 String image(dynamic p){try{return p['_embedded']['wp:featuredmedia'][0]['source_url'].toString();}catch(_){return '';}}
 @override Widget build(BuildContext c)=>Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('اخبار و مقالات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),Expanded(child:busy?const Center(child:CircularProgressIndicator(color:teal)):error!=null?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Text(error!),FilledButton(onPressed:load,child:const Text('تلاش مجدد'))])):ListView(children:[for(final p in posts)Card(color:Colors.white,child:ListTile(isThreeLine:true,leading:image(p).isEmpty?const Icon(Icons.article,color:teal):Image.network(image(p),width:60,height:60,fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Icon(Icons.article,color:teal)),title:Text(clean((p['title']?['rendered']??'').toString()),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(clean((p['excerpt']?['rendered']??'').toString()),maxLines:3,overflow:TextOverflow.ellipsis),onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Article(title:clean((p['title']?['rendered']??'').toString()),body:clean((p['content']?['rendered']??'').toString()))))))]))]);}
 class Article extends StatelessWidget{final String title,body;const Article({super.key,required this.title,required this.body});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('مقاله')),body:ListView(padding:const EdgeInsets.all(20),children:[Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:22)),const SizedBox(height:14),Text(body,style:const TextStyle(height:1.8))]));}
-class Account extends StatelessWidget{const Account({super.key});@override Widget build(BuildContext c)=>const Center(child:Padding(padding:EdgeInsets.all(24),child:Text('حساب کاربری\nورود پیامکی Digitss با اتصال API اختصاصی وردپرس فعال می‌شود.',textAlign:TextAlign.center)));}
+class Account extends StatelessWidget {
+  const Account({super.key});
+  @override
+  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(16), children: [
+    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: teal, borderRadius: BorderRadius.circular(20)), child: const Row(children: [
+      CircleAvatar(radius: 28, backgroundColor: Colors.white, child: Icon(Icons.person_outline, color: teal, size: 32)),
+      SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('پنل مشتریان AKE', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        SizedBox(height: 5), Text('مدیریت سفارش‌ها و اطلاعات حساب', style: TextStyle(color: Colors.white70)),
+      ])),
+    ])),
+    const SizedBox(height: 18),
+    const Row(children: [
+      Expanded(child: _StatBox(Icons.shopping_bag_outlined, 'سفارش‌ها')),
+      SizedBox(width: 8), Expanded(child: _StatBox(Icons.local_shipping_outlined, 'در حال ارسال')),
+      SizedBox(width: 8), Expanded(child: _StatBox(Icons.favorite_border, 'علاقه‌مندی')),
+    ]),
+    const SizedBox(height: 20), const Text('دسترسی سریع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+    const SizedBox(height: 8),
+    _AccountTile(Icons.receipt_long_outlined, 'سفارش‌های من', 'مشاهده وضعیت و سوابق خرید'),
+    _AccountTile(Icons.location_on_outlined, 'نشانی‌های من', 'مدیریت آدرس تحویل سفارش'),
+    _AccountTile(Icons.person_outline, 'اطلاعات حساب', 'نام، شماره موبایل و اطلاعات تماس'),
+    _AccountTile(Icons.support_agent_outlined, 'پشتیبانی', 'ارتباط با مجموعه آریان کوب اسپادانا'),
+    const SizedBox(height: 16),
+    Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)), child: const Text('ورود پیامکی Digitss، سفارش‌های واقعی و نشانی‌ها پس از اتصال API امن وردپرس فعال می‌شوند.', style: TextStyle(color: grey, height: 1.6))),
+  ]);
+}
+
+class _StatBox extends StatelessWidget {
+  final IconData icon; final String label;
+  const _StatBox(this.icon, this.label);
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 5), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)), child: Column(children: [Icon(icon, color: teal), const SizedBox(height: 8), const Text('—', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)), Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: grey))]));
+}
+
+class _AccountTile extends StatelessWidget {
+  final IconData icon; final String title, subtitle;
+  const _AccountTile(this.icon, this.title, this.subtitle);
+  @override
+  Widget build(BuildContext context) => Card(color: Colors.white, elevation: 0, margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundColor: teal.withValues(alpha: .1), child: Icon(icon, color: teal)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)), subtitle: Text(subtitle), trailing: const Icon(Icons.chevron_left), onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('این بخش با اتصال API فعال می‌شود.'))));
+}
+
+class CourierPanel extends StatefulWidget {
+  const CourierPanel({super.key});
+  @override
+  State<CourierPanel> createState() => _CourierPanelState();
+}
+
+class _CourierPanelState extends State<CourierPanel> {
+  int tab = 0;
+  @override
+  Widget build(BuildContext context) => Directionality(textDirection: TextDirection.rtl, child: Scaffold(
+    backgroundColor: bg,
+    appBar: AppBar(backgroundColor: Colors.white, title: const Text('پنل پیک AKE'), actions: [Padding(padding: const EdgeInsets.all(12), child: Center(child: Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)), child: const Text('آفلاین', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))))]),
+    body: IndexedStack(index: tab, children: [_missions(), _history(), _profile()]),
+    bottomNavigationBar: NavigationBar(selectedIndex: tab, onDestinationSelected: (v) => setState(() => tab = v), backgroundColor: Colors.white, destinations: const [
+      NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'مأموریت‌ها'),
+      NavigationDestination(icon: Icon(Icons.history), label: 'سوابق'),
+      NavigationDestination(icon: Icon(Icons.person_outline), label: 'حساب پیک'),
+    ]),
+  ));
+
+  Widget _missions() => ListView(padding: const EdgeInsets.all(16), children: [
+    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: teal, borderRadius: BorderRadius.circular(20)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('سلام، پیک عزیز!', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold)),
+      SizedBox(height: 5), Text('مأموریت‌های تحویل خود را مدیریت کنید.', style: TextStyle(color: Colors.white70)),
+      SizedBox(height: 18), Row(children: [Expanded(child: _CourierStat('ماموریت امروز')), SizedBox(width: 10), Expanded(child: _CourierStat('تحویل موفق'))]),
+    ])),
+    const SizedBox(height: 20), const Text('مأموریت‌های فعال', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 10),
+    Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)), child: const Column(children: [
+      Icon(Icons.local_shipping_outlined, size: 58, color: teal), SizedBox(height: 12),
+      Text('فعلاً مأموریتی ثبت نشده', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), SizedBox(height: 8),
+      Text('با اتصال API وردپرس، سفارش‌های ارجاع‌شده به شما نمایش داده می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: grey, height: 1.6)),
+    ])),
+    const SizedBox(height: 14), const _MissionStep(Icons.inventory_2_outlined, 'دریافت سفارش از مجموعه', 'تأیید دریافت بسته'),
+    const _MissionStep(Icons.map_outlined, 'مسیریابی به مشتری', 'نمایش نشانی و مسیر روی نقشه'),
+    const _MissionStep(Icons.password_outlined, 'تأیید تحویل', 'ثبت کد مشتری و تکمیل سفارش'),
+  ]);
+  Widget _history() => const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('سوابق تحویل پس از اتصال API نمایش داده می‌شود.', textAlign: TextAlign.center)));
+  Widget _profile() => const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('ورود پیک و تنظیم وضعیت آنلاین پس از اتصال API فعال می‌شود.', textAlign: TextAlign.center)));
+}
+
+class _CourierStat extends StatelessWidget {
+  final String label; const _CourierStat(this.label);
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .15), borderRadius: BorderRadius.circular(12)), child: Column(children: [const Text('—', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12))]));
+}
+
+class _MissionStep extends StatelessWidget {
+  final IconData icon; final String title, subtitle;
+  const _MissionStep(this.icon, this.title, this.subtitle);
+  @override
+  Widget build(BuildContext context) => Card(color: Colors.white, elevation: 0, margin: const EdgeInsets.symmetric(vertical: 4), child: ListTile(leading: CircleAvatar(backgroundColor: teal.withValues(alpha: .1), child: Icon(icon, color: teal)), title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(subtitle)));
+}
