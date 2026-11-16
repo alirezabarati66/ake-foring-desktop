@@ -436,32 +436,144 @@ class _NewsState extends State<News> {
 }
 
 class Article extends StatelessWidget{final String title,body;const Article({super.key,required this.title,required this.body});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('مقاله')),body:ListView(padding:const EdgeInsets.all(20),children:[Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:22)),const SizedBox(height:14),Text(body,style:const TextStyle(height:1.8))]));}
-class Account extends StatelessWidget {
+class Account extends StatefulWidget {
   const Account({super.key});
   @override
+  State<Account> createState() => _AccountState();
+}
+
+class _AccountState extends State<Account> {
+  String name = 'مشتری AKE';
+  String phone = 'شماره موبایل ثبت نشده';
+  String email = '';
+  String company = '';
+  final addressController = TextEditingController();
+
+  @override
+  void dispose() {
+    addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _editProfile() async {
+    final nameCtrl = TextEditingController(text: name);
+    final phoneCtrl = TextEditingController(text: phone == 'شماره موبایل ثبت نشده' ? '' : phone);
+    final emailCtrl = TextEditingController(text: email);
+    final companyCtrl = TextEditingController(text: company);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('ویرایش اطلاعات حساب'),
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'نام و نام خانوادگی', prefixIcon: Icon(Icons.person_outline))),
+            TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'شماره موبایل', prefixIcon: Icon(Icons.phone_outlined))),
+            TextField(controller: emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'ایمیل', prefixIcon: Icon(Icons.email_outlined))),
+            TextField(controller: companyCtrl, decoration: const InputDecoration(labelText: 'نام مجموعه (اختیاری)', prefixIcon: Icon(Icons.business_outlined))),
+          ])),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('انصراف')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('ذخیره')),
+          ],
+        ),
+      ),
+    );
+    if (saved == true && mounted) {
+      setState(() {
+        name = nameCtrl.text.trim().isEmpty ? 'مشتری AKE' : nameCtrl.text.trim();
+        phone = phoneCtrl.text.trim().isEmpty ? 'شماره موبایل ثبت نشده' : phoneCtrl.text.trim();
+        email = emailCtrl.text.trim();
+        company = companyCtrl.text.trim();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اطلاعات در همین نشست برنامه به‌روزرسانی شد. برای ذخیره دائمی، اتصال حساب کاربری لازم است.')));
+    }
+    nameCtrl.dispose(); phoneCtrl.dispose(); emailCtrl.dispose(); companyCtrl.dispose();
+  }
+
+  void _showInfo(String title, String message) {
+    showDialog<void>(context: context, builder: (c) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(title: Text(title), content: Text(message), actions: [
+        TextButton(onPressed: () => Navigator.pop(c), child: const Text('متوجه شدم')),
+      ]),
+    ));
+  }
+
+  @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(16), children: [
-    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: teal, borderRadius: BorderRadius.circular(20)), child: const Row(children: [
-      CircleAvatar(radius: 28, backgroundColor: Colors.white, child: Icon(Icons.person_outline, color: teal, size: 32)),
-      SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('پنل مشتریان AKE', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-        SizedBox(height: 5), Text('مدیریت سفارش‌ها و اطلاعات حساب', style: TextStyle(color: Colors.white70)),
-      ])),
-    ])),
+    Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(gradient: const LinearGradient(colors: [teal, Color(0xFF07847F)]), borderRadius: BorderRadius.circular(22)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const CircleAvatar(radius: 30, backgroundColor: Colors.white, child: Icon(Icons.person, color: teal, size: 34)),
+          const SizedBox(width: 13),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            Text(phone, style: const TextStyle(color: Colors.white70)),
+            if (company.isNotEmpty) Text(company, style: const TextStyle(color: Colors.white70)),
+          ])),
+          IconButton(onPressed: _editProfile, icon: const Icon(Icons.edit_outlined, color: Colors.white), tooltip: 'ویرایش پروفایل'),
+        ]),
+        const SizedBox(height: 18),
+        SizedBox(width: double.infinity, child: OutlinedButton.icon(
+          onPressed: _editProfile,
+          icon: const Icon(Icons.manage_accounts_outlined, color: Colors.white),
+          label: const Text('ویرایش اطلاعات حساب', style: TextStyle(color: Colors.white)),
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white70)),
+        )),
+      ]),
+    ),
     const SizedBox(height: 18),
-    const Row(children: [
-      Expanded(child: _StatBox(Icons.shopping_bag_outlined, 'سفارش‌ها')),
-      SizedBox(width: 8), Expanded(child: _StatBox(Icons.local_shipping_outlined, 'در حال ارسال')),
-      SizedBox(width: 8), Expanded(child: _StatBox(Icons.favorite_border, 'علاقه‌مندی')),
+    const Text('حساب کاربری من', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+    const SizedBox(height: 10),
+    Row(children: [
+      Expanded(child: _ProfileActionCard(icon: Icons.shopping_bag_outlined, title: 'سفارش‌ها', subtitle: 'پیگیری خریدها', onTap: () => _showInfo('سفارش‌های من', 'پس از ورود به حساب ووکامرس، سفارش‌های واقعی و وضعیت ارسال آن‌ها در این قسمت نمایش داده می‌شود.'))),
+      const SizedBox(width: 9),
+      Expanded(child: _ProfileActionCard(icon: Icons.location_on_outlined, title: 'نشانی‌ها', subtitle: 'آدرس تحویل', onTap: () => _showInfo('نشانی‌های من', 'مدیریت و انتخاب نشانی تحویل پس از اتصال حساب کاربری فعال می‌شود.'))),
     ]),
-    const SizedBox(height: 20), const Text('دسترسی سریع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+    const SizedBox(height: 9),
+    Row(children: [
+      Expanded(child: _ProfileActionCard(icon: Icons.favorite_border, title: 'علاقه‌مندی‌ها', subtitle: 'محصولات ذخیره‌شده', onTap: () => _showInfo('علاقه‌مندی‌ها', 'فهرست محصولات موردعلاقه پس از پیاده‌سازی ذخیره‌سازی حساب نمایش داده می‌شود.'))),
+      const SizedBox(width: 9),
+      Expanded(child: _ProfileActionCard(icon: Icons.support_agent_outlined, title: 'پشتیبانی', subtitle: 'ارتباط با ما', onTap: () => _showInfo('پشتیبانی AKE', 'برای پیگیری سفارش یا دریافت راهنمایی با واحد فروش آریان کوب اسپادانا در ارتباط باشید.'))),
+    ]),
+    const SizedBox(height: 18),
+    const Text('اطلاعات تماس', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
     const SizedBox(height: 8),
-    _AccountTile(Icons.receipt_long_outlined, 'سفارش‌های من', 'مشاهده وضعیت و سوابق خرید'),
-    _AccountTile(Icons.location_on_outlined, 'نشانی‌های من', 'مدیریت آدرس تحویل سفارش'),
-    _AccountTile(Icons.person_outline, 'اطلاعات حساب', 'نام، شماره موبایل و اطلاعات تماس'),
-    _AccountTile(Icons.support_agent_outlined, 'پشتیبانی', 'ارتباط با مجموعه آریان کوب اسپادانا'),
-    const SizedBox(height: 16),
-    Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)), child: const Text('ورود پیامکی Digitss، سفارش‌های واقعی و نشانی‌ها پس از اتصال API امن وردپرس فعال می‌شوند.', style: TextStyle(color: grey, height: 1.6))),
+    Card(color: Colors.white, elevation: 0, child: Column(children: [
+      ListTile(leading: const Icon(Icons.phone_outlined, color: teal), title: const Text('شماره موبایل'), subtitle: Text(phone)),
+      const Divider(height: 1, indent: 16, endIndent: 16),
+      ListTile(leading: const Icon(Icons.email_outlined, color: teal), title: const Text('ایمیل'), subtitle: Text(email.isEmpty ? 'ثبت نشده' : email)),
+      const Divider(height: 1, indent: 16, endIndent: 16),
+      ListTile(leading: const Icon(Icons.business_outlined, color: teal), title: const Text('مجموعه'), subtitle: Text(company.isEmpty ? 'ثبت نشده' : company)),
+    ])),
+    const SizedBox(height: 12),
+    const Text('توجه: تغییرات این صفحه فعلاً در حافظه موقت برنامه نگهداری می‌شوند. برای ورود امن، ذخیره دائمی اطلاعات، سفارش‌ها و نشانی‌ها باید API سایت متصل شود.', style: TextStyle(color: grey, height: 1.7, fontSize: 12)),
   ]);
+}
+
+class _ProfileActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title, subtitle;
+  final VoidCallback onTap;
+  const _ProfileActionCard({required this.icon, required this.title, required this.subtitle, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Card(
+    color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: InkWell(borderRadius: BorderRadius.circular(16), onTap: onTap, child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        CircleAvatar(backgroundColor: teal.withValues(alpha: .1), child: Icon(icon, color: teal)),
+        const SizedBox(height: 12),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 3),
+        Text(subtitle, style: const TextStyle(color: grey, fontSize: 11)),
+      ]),
+    )),
+  );
 }
 
 class _StatBox extends StatelessWidget {
@@ -546,7 +658,102 @@ class _CourierPanelState extends State<CourierPanel> {
     const _MissionStep(Icons.password_outlined, 'تأیید تحویل', 'ثبت کد مشتری و تکمیل سفارش'),
   ]);
   Widget _history() => const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('سوابق تحویل پس از اتصال API نمایش داده می‌شود.', textAlign: TextAlign.center)));
-  Widget _profile() => const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('ورود پیک و تنظیم وضعیت آنلاین پس از اتصال API فعال می‌شود.', textAlign: TextAlign.center)));
+  Widget _profile() => const CourierProfile();
+}
+
+class CourierProfile extends StatefulWidget {
+  const CourierProfile({super.key});
+  @override
+  State<CourierProfile> createState() => _CourierProfileState();
+}
+
+class _CourierProfileState extends State<CourierProfile> {
+  String name = 'پیک AKE';
+  String phone = '';
+  String vehicle = 'موتورسیکلت';
+  String plate = '';
+  bool online = false;
+
+  Future<void> _edit() async {
+    final nameCtrl = TextEditingController(text: name);
+    final phoneCtrl = TextEditingController(text: phone);
+    final vehicleCtrl = TextEditingController(text: vehicle);
+    final plateCtrl = TextEditingController(text: plate);
+    final saved = await showDialog<bool>(context: context, builder: (c) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        title: const Text('ویرایش پروفایل پیک'),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'نام و نام خانوادگی', prefixIcon: Icon(Icons.person_outline))),
+          TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'شماره موبایل', prefixIcon: Icon(Icons.phone_outlined))),
+          TextField(controller: vehicleCtrl, decoration: const InputDecoration(labelText: 'نوع وسیله نقلیه', prefixIcon: Icon(Icons.two_wheeler_outlined))),
+          TextField(controller: plateCtrl, decoration: const InputDecoration(labelText: 'شماره پلاک', prefixIcon: Icon(Icons.confirmation_number_outlined))),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('انصراف')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('ذخیره')),
+        ],
+      ),
+    ));
+    if (saved == true && mounted) {
+      setState(() {
+        name = nameCtrl.text.trim().isEmpty ? 'پیک AKE' : nameCtrl.text.trim();
+        phone = phoneCtrl.text.trim();
+        vehicle = vehicleCtrl.text.trim().isEmpty ? 'ثبت نشده' : vehicleCtrl.text.trim();
+        plate = plateCtrl.text.trim();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اطلاعات در همین نشست برنامه به‌روزرسانی شد؛ ذخیره دائمی نیازمند اتصال API است.')));
+    }
+    nameCtrl.dispose(); phoneCtrl.dispose(); vehicleCtrl.dispose(); plateCtrl.dispose();
+  }
+
+  Widget _detail(IconData icon, String title, String value) => ListTile(
+    leading: CircleAvatar(backgroundColor: teal.withValues(alpha: .1), child: Icon(icon, color: teal)),
+    title: Text(title, style: const TextStyle(fontSize: 12, color: grey)),
+    subtitle: Text(value.isEmpty ? 'ثبت نشده' : value, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
+  );
+
+  @override
+  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(16), children: [
+    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: const LinearGradient(colors: [teal, Color(0xFF07847F)]), borderRadius: BorderRadius.circular(22)), child: Column(children: [
+      const CircleAvatar(radius: 37, backgroundColor: Colors.white, child: Icon(Icons.delivery_dining, color: teal, size: 42)),
+      const SizedBox(height: 10),
+      Text(name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 5),
+      Text(phone.isEmpty ? 'شماره موبایل ثبت نشده' : phone, style: const TextStyle(color: Colors.white70)),
+      const SizedBox(height: 14),
+      Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), decoration: BoxDecoration(color: Colors.white.withValues(alpha: .18), borderRadius: BorderRadius.circular(30)), child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.circle, size: 10, color: online ? Colors.lightGreenAccent : Colors.orangeAccent),
+        const SizedBox(width: 7),
+        Text(online ? 'آماده دریافت مأموریت' : 'در حال حاضر آفلاین', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      ])),
+    ])),
+    const SizedBox(height: 16),
+    Card(color: Colors.white, elevation: 0, child: Column(children: [
+      _detail(Icons.person_outline, 'نام و نام خانوادگی', name),
+      const Divider(height: 1, indent: 16, endIndent: 16),
+      _detail(Icons.phone_outlined, 'شماره موبایل', phone),
+      const Divider(height: 1, indent: 16, endIndent: 16),
+      _detail(Icons.two_wheeler_outlined, 'وسیله نقلیه', vehicle),
+      const Divider(height: 1, indent: 16, endIndent: 16),
+      _detail(Icons.confirmation_number_outlined, 'شماره پلاک', plate),
+    ])),
+    const SizedBox(height: 12),
+    FilledButton.icon(onPressed: _edit, icon: const Icon(Icons.edit_outlined), label: const Text('ویرایش اطلاعات پیک'), style: FilledButton.styleFrom(backgroundColor: teal, padding: const EdgeInsets.symmetric(vertical: 14))),
+    const SizedBox(height: 10),
+    SwitchListTile(
+      value: online,
+      onChanged: (v) => setState(() => online = v),
+      activeColor: teal,
+      tileColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      secondary: const Icon(Icons.wifi_tethering, color: teal),
+      title: const Text('وضعیت فعالیت'),
+      subtitle: Text(online ? 'آماده دریافت مأموریت (نمایشی)' : 'آفلاین (نمایشی)'),
+    ),
+    const SizedBox(height: 12),
+    const Text('اطلاعات این پروفایل فعلاً روی همین صفحه و به‌صورت موقت نگهداری می‌شود. برای احراز هویت پیک، ذخیره اطلاعات، وضعیت آنلاین واقعی و دریافت مأموریت‌ها باید سرویس امن سایت متصل شود.', style: TextStyle(color: grey, height: 1.7, fontSize: 12)),
+  ]);
 }
 
 class _CourierStat extends StatelessWidget {
