@@ -443,10 +443,11 @@ class Account extends StatefulWidget {
 }
 
 class _AccountState extends State<Account> {
-  String name = 'مشتری AKE';
-  String phone = 'شماره موبایل ثبت نشده';
-  String email = '';
-  String company = '';
+  // Demo-only customer profile; replace with authenticated WooCommerce data later.
+  String name = 'مشتری نمونه AKE';
+  String phone = '09XX-XXX-XX-01';
+  String email = 'customer-demo@example.com';
+  String company = 'مجموعه نمونه قطعات صنعتی';
   final addressController = TextEditingController();
 
   @override
@@ -530,15 +531,15 @@ class _AccountState extends State<Account> {
     const Text('حساب کاربری من', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
     const SizedBox(height: 10),
     Row(children: [
-      Expanded(child: _ProfileActionCard(icon: Icons.shopping_bag_outlined, title: 'سفارش‌ها', subtitle: 'پیگیری خریدها', onTap: () => _showInfo('سفارش‌های من', 'پس از ورود به حساب ووکامرس، سفارش‌های واقعی و وضعیت ارسال آن‌ها در این قسمت نمایش داده می‌شود.'))),
+      Expanded(child: _ProfileActionCard(icon: Icons.shopping_bag_outlined, title: 'سفارش‌ها', subtitle: '۲ سفارش آزمایشی', onTap: () => _showInfo('سفارش‌های من', 'AKE-DEMO-1002 | قطعه فورج سفارشی | در حال آماده‌سازی\n\nAKE-DEMO-1001 | مجموعه قطعات صنعتی | تحویل‌شده\n\nاین سفارش‌ها صرفاً نمایشی هستند و در سایت ثبت نشده‌اند.'))),
       const SizedBox(width: 9),
-      Expanded(child: _ProfileActionCard(icon: Icons.location_on_outlined, title: 'نشانی‌ها', subtitle: 'آدرس تحویل', onTap: () => _showInfo('نشانی‌های من', 'مدیریت و انتخاب نشانی تحویل پس از اتصال حساب کاربری فعال می‌شود.'))),
+      Expanded(child: _ProfileActionCard(icon: Icons.location_on_outlined, title: 'نشانی‌ها', subtitle: 'نشانی پیش‌فرض نمونه', onTap: () => _showInfo('نشانی تحویل نمونه', 'اصفهان، شهرک صنعتی نمونه، خیابان تولید، پلاک آزمایشی\n\nاین نشانی ساختگی است و فقط برای نمایش رابط کاربری است.'))),
     ]),
     const SizedBox(height: 9),
     Row(children: [
-      Expanded(child: _ProfileActionCard(icon: Icons.favorite_border, title: 'علاقه‌مندی‌ها', subtitle: 'محصولات ذخیره‌شده', onTap: () => _showInfo('علاقه‌مندی‌ها', 'فهرست محصولات موردعلاقه پس از پیاده‌سازی ذخیره‌سازی حساب نمایش داده می‌شود.'))),
+      Expanded(child: _ProfileActionCard(icon: Icons.favorite_border, title: 'علاقه‌مندی‌ها', subtitle: '۳ محصول نمونه', onTap: () => _showInfo('علاقه‌مندی‌های نمونه', 'قطعات فورج فولادی\nقطعات خودرو\nقطعات صنعتی سفارشی\n\nاین فهرست فعلاً نمایشی است.'))),
       const SizedBox(width: 9),
-      Expanded(child: _ProfileActionCard(icon: Icons.support_agent_outlined, title: 'پشتیبانی', subtitle: 'ارتباط با ما', onTap: () => _showInfo('پشتیبانی AKE', 'برای پیگیری سفارش یا دریافت راهنمایی با واحد فروش آریان کوب اسپادانا در ارتباط باشید.'))),
+      Expanded(child: _ProfileActionCard(icon: Icons.support_agent_outlined, title: 'پشتیبانی', subtitle: 'پیگیری و راهنمایی', onTap: () => _showInfo('پشتیبانی AKE', 'موضوع نمونه: پیگیری سفارش AKE-DEMO-1002\nوضعیت: درخواست آزمایشی\n\nاطلاعات تماس واقعی پس از اتصال مسیر پشتیبانی درج می‌شود.'))),
     ]),
     const SizedBox(height: 18),
     const Text('اطلاعات تماس', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -648,16 +649,21 @@ class _CourierPanelState extends State<CourierPanel> {
       SizedBox(height: 18), Row(children: [Expanded(child: _CourierStat('ماموریت امروز')), SizedBox(width: 10), Expanded(child: _CourierStat('تحویل موفق'))]),
     ])),
     const SizedBox(height: 20), const Text('مأموریت‌های فعال', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 10),
-    Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)), child: const Column(children: [
-      Icon(Icons.local_shipping_outlined, size: 58, color: teal), SizedBox(height: 12),
-      Text('فعلاً مأموریتی ثبت نشده', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), SizedBox(height: 8),
-      Text('با اتصال API وردپرس، سفارش‌های ارجاع‌شده به شما نمایش داده می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: grey, height: 1.6)),
-    ])),
+    Card(color: Colors.white, elevation: 0, child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('مأموریت AKE-DEMO-1002', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      const SizedBox(height: 10),
+      const ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_pin_circle_outlined, color: teal), title: Text('تحویل‌گیرنده: مشتری نمونه AKE'), subtitle: Text('شماره تماس: 09XX-XXX-XX-01')),
+      const Divider(),
+      const ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.location_on_outlined, color: teal), title: Text('مقصد آزمایشی'), subtitle: Text('اصفهان، شهرک صنعتی نمونه، خیابان تولید')),
+      const ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.inventory_2_outlined, color: teal), title: Text('محموله'), subtitle: Text('یک بسته قطعات فورج · سفارش AKE-DEMO-1002')),
+      const SizedBox(height: 8),
+      SizedBox(width: double.infinity, child: FilledButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('این مأموریت فقط نمایشی است؛ ثبت واقعی پس از اتصال API فعال می‌شود.'))), child: const Text('تأیید دریافت بسته (نمایشی)'), style: FilledButton.styleFrom(backgroundColor: teal))),
+    ]))),
     const SizedBox(height: 14), const _MissionStep(Icons.inventory_2_outlined, 'دریافت سفارش از مجموعه', 'تأیید دریافت بسته'),
     const _MissionStep(Icons.map_outlined, 'مسیریابی به مشتری', 'نمایش نشانی و مسیر روی نقشه'),
     const _MissionStep(Icons.password_outlined, 'تأیید تحویل', 'ثبت کد مشتری و تکمیل سفارش'),
   ]);
-  Widget _history() => const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('سوابق تحویل پس از اتصال API نمایش داده می‌شود.', textAlign: TextAlign.center)));
+  Widget _history() => ListView(padding: const EdgeInsets.all(16), children: [const Text('سوابق تحویل آزمایشی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 12), Card(color: Colors.white, elevation: 0, child: ListTile(leading: const CircleAvatar(backgroundColor: Color(0xFFE4F5F2), child: Icon(Icons.check_circle, color: teal)), title: const Text('AKE-DEMO-1001'), subtitle: const Text('تحویل موفق · مشتری نمونه AKE\nقطعات صنعتی · مقصد آزمایشی اصفهان'), trailing: const Text('دیروز', style: TextStyle(color: grey, fontSize: 11)))), const SizedBox(height: 8), const Text('این سابقه ساختگی است و در سفارش‌های واقعی سایت وجود ندارد.', style: TextStyle(color: grey, fontSize: 12))]);
   Widget _profile() => const CourierProfile();
 }
 
@@ -668,11 +674,12 @@ class CourierProfile extends StatefulWidget {
 }
 
 class _CourierProfileState extends State<CourierProfile> {
-  String name = 'پیک AKE';
-  String phone = '';
+  // Demo-only courier profile; all operational data is simulated locally.
+  String name = 'امیر رضایی (پیک آزمایشی)';
+  String phone = '09XX-XXX-XX-02';
   String vehicle = 'موتورسیکلت';
-  String plate = '';
-  bool online = false;
+  String plate = 'پلاک آزمایشی';
+  bool online = true;
 
   Future<void> _edit() async {
     final nameCtrl = TextEditingController(text: name);
