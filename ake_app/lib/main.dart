@@ -274,6 +274,7 @@ class Detail extends StatelessWidget {
 
 class Basket extends StatelessWidget{final Map<int,StoreProduct> cart;final Map<int,int> qty;final void Function(int,int) change;const Basket({super.key,required this.cart,required this.qty,required this.change});@override Widget build(BuildContext c){final ids=qty.keys.toList();return Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('سبد خرید',style:TextStyle(fontWeight:FontWeight.bold,fontSize:20))),Expanded(child:ids.isEmpty?const Center(child:Text('سبد خرید خالی است')):ListView(children:[for(final id in ids)if(cart[id]!=null)Card(color:Colors.white,child:ListTile(title:Text(cart[id]!.name),subtitle:Text(cart[id]!.displayPrice),trailing:Row(mainAxisSize:MainAxisSize.min,children:[IconButton(onPressed:()=>change(id,-1),icon:const Icon(Icons.remove)),Text(qty[id].toString()),IconButton(onPressed:()=>change(id,1),icon:const Icon(Icons.add))])))])),if(ids.isNotEmpty)Padding(padding:const EdgeInsets.all(16),child:SizedBox(width:double.infinity,child:FilledButton(onPressed:()=>ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('درگاه درون‌اپی نیازمند API سفارش و پرداخت وردپرس است.'))),style:FilledButton.styleFrom(backgroundColor:teal),child:const Text('ادامه و پرداخت'))))]);}}
 
+
 class News extends StatefulWidget {
   const News({super.key});
 
@@ -282,9 +283,9 @@ class News extends StatefulWidget {
 }
 
 class _NewsState extends State<News> {
-  List<dynamic> posts = [];
   bool busy = true;
   String? error;
+  List<dynamic> posts = [];
 
   @override
   void initState() {
@@ -297,15 +298,22 @@ class _NewsState extends State<News> {
       busy = true;
       error = null;
     });
+
     try {
-      final response = await http
-          .get(Uri.parse(
-              'https://ake-forging.com/wp-json/wp/v2/posts?per_page=20&_embed'))
+      final r = await http
+          .get(
+            Uri.parse(
+              'https://ake-forging.com/wp-json/wp/v2/posts?per_page=20&_embed',
+            ),
+          )
           .timeout(const Duration(seconds: 25));
-      if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
+
+      if (r.statusCode != 200) {
+        throw Exception('HTTP ${r.statusCode}');
       }
-      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+
+      final data = jsonDecode(utf8.decode(r.bodyBytes)) as List<dynamic>;
+
       if (mounted) {
         setState(() {
           posts = data;
@@ -322,92 +330,109 @@ class _NewsState extends State<News> {
     }
   }
 
-  String clean(String value) => value
-      .replaceAll(RegExp(r'<[^>]*>'), '')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&nbsp;', ' ');
+  String clean(String s) {
+    return s
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&nbsp;', ' ');
+  }
 
-  String image(dynamic post) {
+  String image(dynamic p) {
     try {
-      return post['_embedded']['wp:featuredmedia'][0]['source_url'].toString();
+      return p['_embedded']['wp:featuredmedia'][0]['source_url'].toString();
     } catch (_) {
       return '';
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('اخبار و مقالات',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+  Widget build(BuildContext c) {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'اخبار و مقالات',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          Expanded(
-            child: busy
-                ? const Center(child: CircularProgressIndicator(color: teal))
-                : error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(error!),
-                            FilledButton(
-                                onPressed: load,
-                                child: const Text('تلاش مجدد')),
-                          ],
-                        ),
-                      )
-                    : ListView(
+        ),
+        Expanded(
+          child: busy
+              ? const Center(
+                  child: CircularProgressIndicator(color: teal),
+                )
+              : error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          for (final post in posts)
-                            Card(
-                              color: Colors.white,
-                              child: ListTile(
-                                isThreeLine: true,
-                                leading: image(post).isEmpty
-                                    ? const Icon(Icons.article, color: teal)
-                                    : Image.network(
-                                        image(post),
-                                        width: 60,
-                                        height: 60,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stack) =>
-                                            const Icon(Icons.article,
-                                                color: teal),
-                                      ),
-                                title: Text(
-                                  clean((post['title']?['rendered'] ?? '')
-                                      .toString()),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                          Text(error!),
+                          FilledButton(
+                            onPressed: load,
+                            child: const Text('تلاش مجدد'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
+                      children: [
+                        for (final p in posts)
+                          Card(
+                            color: Colors.white,
+                            child: ListTile(
+                              isThreeLine: true,
+                              leading: image(p).isEmpty
+                                  ? const Icon(Icons.article, color: teal)
+                                  : Image.network(
+                                      image(p),
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.article, color: teal),
+                                    ),
+                              title: Text(
+                                clean(
+                                  (p['title']?['rendered'] ?? '').toString(),
                                 ),
-                                subtitle: Text(
-                                  clean((post['excerpt']?['rendered'] ?? '')
-                                      .toString()),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                clean(
+                                  (p['excerpt']?['rendered'] ?? '').toString(),
                                 ),
-                                onTap: () => Navigator.push(
-                                  context,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  c,
                                   MaterialPageRoute(
                                     builder: (_) => Article(
                                       title: clean(
-                                          (post['title']?['rendered'] ?? '')
-                                              .toString()),
+                                        (p['title']?['rendered'] ?? '')
+                                            .toString(),
+                                      ),
                                       body: clean(
-                                          (post['content']?['rendered'] ?? '')
-                                              .toString()),
+                                        (p['content']?['rendered'] ?? '')
+                                            .toString(),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
-                        ],
-                      ),
-          ),
-        ],
-      );
+                          ),
+                      ],
+                    ),
+        ),
+      ],
+    );
+  }
 }
 
 class Article extends StatelessWidget{final String title,body;const Article({super.key,required this.title,required this.body});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('مقاله')),body:ListView(padding:const EdgeInsets.all(20),children:[Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:22)),const SizedBox(height:14),Text(body,style:const TextStyle(height:1.8))]));}
