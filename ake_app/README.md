@@ -1,17 +1,28 @@
-# ake_app
+# AKE Forging App
 
-A new Flutter project.
+اپلیکیشن Flutter آریان کوب اسپادانا (AKE Forging) با رابط فارسی و راست‌چین.
 
-## Getting Started
+## مستندات ضروری پروژه
+قبل از هر ویرایش یا رفع اشکال، این فایل‌ها را به‌ترتیب بررسی کنید:
 
-This project is a starting point for a Flutter application.
+- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) — وضعیت پروژه، ساختار فایل‌ها، محیط توسعه و قابلیت‌های موجود.
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — خطاهای قبلی، مسیرهای ناموفق و راهکارهای تأییدشده.
+- [CHANGELOG.md](CHANGELOG.md) — تاریخچه تغییرات و تست‌ها.
 
-A few resources to get you started if this is your first Flutter project:
+## اجرای پروژه
+از پوشه `ake_app` در CMD:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```cmd
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+در صورت خطای دانلود وابستگی‌ها، قبل از پاک‌کردن cache یا تغییر نسخه ابزارها، ابتدا بخش مربوط در `TROUBLESHOOTING.md` را بخوانید.
+
+## مشخصات طراحی
+- رابط فارسی و RTL
+- رنگ اصلی: `#01ADA5`
+- رنگ مکمل: `#57595B`
+
+## قانون نگهداری پروژه
+هر تغییر کد باید با به‌روزرسانی مستندات مربوط همراه باشد. هر خطا و هر راهکار ناموفق یا موفق در `TROUBLESHOOTING.md` ثبت شود تا دوباره آزمون‌وخطای تکراری انجام نشود. امکاناتی که فقط در رابط کاربری پیاده‌سازی شده‌اند، تا زمان اتصال و تست واقعی به‌عنوان قابلیت عملیاتی معرفی نشوند.
