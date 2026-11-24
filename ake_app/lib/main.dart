@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'auth_page.dart';
+import 'checkout_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'models/store_product.dart';
@@ -265,7 +266,7 @@ class Detail extends StatelessWidget {
   }
 }
 
-class Basket extends StatelessWidget{final Map<int,StoreProduct> cart;final Map<int,int> qty;final void Function(int,int) change;const Basket({super.key,required this.cart,required this.qty,required this.change});@override Widget build(BuildContext c){final ids=qty.keys.toList();return Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('سبد خرید',style:TextStyle(fontWeight:FontWeight.bold,fontSize:20))),Expanded(child:ids.isEmpty?const Center(child:Text('سبد خرید خالی است')):ListView(children:[for(final id in ids)if(cart[id]!=null)Card(color:Colors.white,child:ListTile(title:Text(cart[id]!.name),subtitle:Text(cart[id]!.displayPrice),trailing:Row(mainAxisSize:MainAxisSize.min,children:[IconButton(onPressed:()=>change(id,-1),icon:const Icon(Icons.remove)),Text(qty[id].toString()),IconButton(onPressed:()=>change(id,1),icon:const Icon(Icons.add))])))])),if(ids.isNotEmpty)Padding(padding:const EdgeInsets.all(16),child:SizedBox(width:double.infinity,child:FilledButton(onPressed:()=>ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('درگاه درون‌اپی نیازمند API سفارش و پرداخت وردپرس است.'))),style:FilledButton.styleFrom(backgroundColor:teal),child:const Text('ادامه و پرداخت'))))]);}}
+class Basket extends StatelessWidget{final Map<int,StoreProduct> cart;final Map<int,int> qty;final void Function(int,int) change;const Basket({super.key,required this.cart,required this.qty,required this.change});@override Widget build(BuildContext c){final ids=qty.keys.toList();return Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('سبد خرید',style:TextStyle(fontWeight:FontWeight.bold,fontSize:20))),Expanded(child:ids.isEmpty?const Center(child:Text('سبد خرید خالی است')):ListView(children:[for(final id in ids)if(cart[id]!=null)Card(color:Colors.white,child:ListTile(title:Text(cart[id]!.name),subtitle:Text(cart[id]!.displayPrice),trailing:Row(mainAxisSize:MainAxisSize.min,children:[IconButton(onPressed:()=>change(id,-1),icon:const Icon(Icons.remove)),Text(qty[id].toString()),IconButton(onPressed:()=>change(id,1),icon:const Icon(Icons.add))])))])),if(ids.isNotEmpty)Padding(padding:const EdgeInsets.all(16),child:SizedBox(width:double.infinity,child:FilledButton(onPressed: () async {final snapshot=Map<int,int>.from(qty);final id=await Navigator.of(c).push<int>(MaterialPageRoute(builder:(_)=>CheckoutPage(items:snapshot)));if(id!=null && c.mounted){for(final entry in snapshot.entries){change(entry.key,-entry.value);}ScaffoldMessenger.of(c).showSnackBar(SnackBar(content:Text('درخواست سفارش شماره $id ثبت شد')));}},style:FilledButton.styleFrom(backgroundColor:teal),child:const Text('ادامه و ثبت درخواست'))))]);}}
 
 
 class News extends StatefulWidget {
