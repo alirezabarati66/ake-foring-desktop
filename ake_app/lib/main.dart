@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'auth_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'models/store_product.dart';
@@ -47,7 +48,7 @@ class _ShellState extends State<Shell> {
       Shop(onAdd: add),
       const News(),
       Basket(cart: cart, qty: qty, change: change),
-      const Account(),
+      const AuthPage(),
     ];
 
     return Directionality(
@@ -90,15 +91,7 @@ class _ShellState extends State<Shell> {
                 _menu(context, 'اخبار و مقالات', Icons.article, 2),
                 _menu(context, 'سبد خرید ($count)', Icons.shopping_cart, 3),
                 _menu(context, 'حساب کاربری', Icons.person, 4),
-                ListTile(
-                  leading: const Icon(Icons.local_shipping, color: teal),
-                  title: const Text('پنل پیک'),
-                  subtitle: const Text('پیش‌نمایش مأموریت‌ها'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CourierPanel()));
-                  },
-                ),
+
               ],
             ),
           ),
