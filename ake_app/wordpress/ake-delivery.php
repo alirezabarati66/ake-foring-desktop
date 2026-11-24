@@ -73,3 +73,43 @@ add_action('woocommerce_process_shop_order_meta',function($id){
  $o=wc_get_order($id); if(!$o) return;
  $o->update_meta_data('_ake_courier_id',$uid); $o->save();
 });
+
+add_action('rest_api_init',function(){
+ register_rest_route('ake/v1','/order-request',[
+ 'methods'=>'POST','permission_callback'=>function(){return is_user_logged_in();},
+ 'callback'=>function($r){
+ if(!function_exists('wc_create_order')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
+ $items=$r->get_param('items');
+ $address=sanitize_text_field((string)$r->get_param('address'));
+ $lat=$r->get_param('lat'); $lng=$r->get_param('lng');
+ if(!is_array($items)||!count($items)||count($items)>50||!$address||!is_numeric($lat)||!is_numeric($lng)||abs((float)$lat)>90||abs((float)$lng)>180) return new WP_Error('invalid','Invalid request',['status'=>400]);
+ $products=[];
+ foreach($items as $id=>$qty){
+ if(!ctype_digit((string)$id)||!is_int($qty)||$qty<1||$qty>1000) return new WP_Error('invalid_item','Invalid item',['status'=>400]);
+ $p=wc_get_product((int)$id);
+ if(!$p||!$p->is_type('simple')||!$p->is_purchasable()||!$p->is_in_stock()||!$p->has_enough_stock($qty)||($p->is_sold_individually()&&$qty>1)) return new WP_Error('unavailable_item','Product unavailable',['status'=>409]);
+ $products[]=[$p,$qty];
+ }
+ $o=null;
+ try {
+ $o=new WC_Order();
+ $o->set_customer_id(get_current_user_id());
+ $o->set_created_via('ake-app-request');
+ $o->set_shipping_address_1($address);
+ $o->set_shipping_country('IR');
+ $o->set_billing_country('IR');
+ foreach($products as [$p,$qty]) $o->add_product($p,$qty);
+ $o->update_meta_data('_ake_lat',(float)$lat);
+ $o->update_meta_data('_ake_lng',(float)$lng);
+ $o->update_meta_data('_ake_requires_shipping_quote','yes');
+ $o->calculate_totals();
+ $o->set_status('pending');
+ $o->save();
+ return ['id'=>$o->get_id(),'status'=>'pending','requires_review'=>true];
+ } catch(Throwable $e){
+ if($o && $o->get_id()) $o->delete(true);
+ return new WP_Error('order_error','Unable to create order',['status'=>500]);
+ }
+ }
+ ]);
+});
