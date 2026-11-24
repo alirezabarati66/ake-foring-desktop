@@ -39,3 +39,37 @@ add_action('rest_api_init', function(){
     ]);
 });
 register_activation_hook(__FILE__,function(){add_role('ake_courier','AKE Courier',['read'=>true,'ake_deliver_orders'=>true]);});
+
+add_action('rest_api_init',function(){
+ register_rest_route('ake/v1','/me',[
+ 'methods'=>'GET','permission_callback'=>function(){return is_user_logged_in();},
+ 'callback'=>function(){ $u=wp_get_current_user(); return ['id'=>$u->ID,'name'=>$u->display_name,'courier'=>current_user_can('ake_deliver_orders')]; }
+ ]);
+ register_rest_route('ake/v1','/orders',[
+ 'methods'=>'GET','permission_callback'=>function(){return is_user_logged_in();},
+ 'callback'=>function(){
+ if(!function_exists('wc_get_orders')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
+ $out=[];
+ foreach(wc_get_orders(['customer_id'=>get_current_user_id(),'limit'=>50,'status'=>['pending','on-hold']]) as $o){
+ if((int)$o->get_customer_id()!==get_current_user_id()) continue;
+ $out[]=['id'=>$o->get_id(),'number'=>$o->get_order_number(),'status'=>$o->get_status()];
+ }
+ return $out;
+ }
+ ]);
+});
+add_action('woocommerce_admin_order_data_after_shipping_address',function($order){
+ if(!current_user_can('manage_woocommerce')) return;
+ wp_nonce_field('ake_assign_'.$order->get_id(),'ake_assign_nonce');
+ $couriers=get_users(['role'=>'ake_courier','fields'=>['ID','display_name']]);
+ echo '<p><label for="ake_courier_id">AKE Courier</label><select name="ake_courier_id" id="ake_courier_id"><option value="0">Unassigned</option>';
+ foreach($couriers as $u) printf('<option value="%d" %s>%s</option>',$u->ID,selected((int)$order->get_meta('_ake_courier_id'),$u->ID,false),esc_html($u->display_name));
+ echo '</select></p>';
+});
+add_action('woocommerce_process_shop_order_meta',function($id){
+ if(!current_user_can('manage_woocommerce')||!isset($_POST['ake_assign_nonce'],$_POST['ake_courier_id'])||!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['ake_assign_nonce'])),'ake_assign_'.$id)) return;
+ $uid=absint($_POST['ake_courier_id']);
+ if($uid && !user_can($uid,'ake_deliver_orders')) return;
+ $o=wc_get_order($id); if(!$o) return;
+ $o->update_meta_data('_ake_courier_id',$uid); $o->save();
+});
