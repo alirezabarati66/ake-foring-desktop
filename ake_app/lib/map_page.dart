@@ -18,6 +18,7 @@ class _MapPageState extends State<MapPage> {
     try {
       await controller.ready.timeout(const Duration(seconds:15));
       final center=await controller.getCurrentLocation().timeout(const Duration(seconds:10));
+      if(center==null) throw StateError('Map center unavailable');
       if(mounted) Navigator.pop(context,[center.latitude,center.longitude]);
     } catch (_) {
       if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('دریافت موقعیت نقشه ناموفق بود')));
