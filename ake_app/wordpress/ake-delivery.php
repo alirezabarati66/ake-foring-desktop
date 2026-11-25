@@ -111,6 +111,16 @@ add_action('rest_api_init',function(){
  $o=new WC_Order();
  $o->set_customer_id(get_current_user_id());
  $o->set_created_via('ake-app-request');
+ $customer=get_userdata(get_current_user_id());
+ $phone=get_user_meta(get_current_user_id(),'billing_phone',true);
+ if(!$phone) $phone=get_user_meta(get_current_user_id(),'digits_phone',true);
+ if(!$phone) $phone=get_user_meta(get_current_user_id(),'digits_phone_no',true);
+ $customer_name=$customer ? ($customer->first_name ?: $customer->display_name) : '';
+ $o->set_billing_first_name($customer_name);
+ $o->set_billing_phone($phone);
+ $o->set_billing_email($customer ? $customer->user_email : '');
+ $o->set_billing_address_1($address);
+ $o->set_shipping_first_name($customer_name);
  $o->set_shipping_address_1($address);
  $o->set_shipping_country('IR');
  $o->set_billing_country('IR');
