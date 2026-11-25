@@ -22,11 +22,8 @@ class _ShellState extends State<Shell> {
   final Map<int, StoreProduct> cart = {};
   final Map<int, int> qty = {};
 
-  void add(StoreProduct p) {
-    setState(() {
-      cart[p.id] = p;
-      qty[p.id] = (qty[p.id] ?? 0) + 1;
-    });
+  void add(StoreProduct p, [int amount = 1]) {
+    setState(() { cart[p.id] = p; qty[p.id] = (qty[p.id] ?? 0) + amount; });
   }
 
   void change(int id, int delta) {
@@ -46,8 +43,8 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      Home(onAdd: add),
-      Shop(onAdd: add),
+      Home(onAdd: add, onNavigate: (value) => setState(() => tab = value)),
+      Shop(onAdd: add, onNavigate: (value) => setState(() => tab = value)),
       const News(),
       Basket(cart: cart, qty: qty, change: change),
       const AuthPage(),
@@ -105,7 +102,9 @@ class _ShellState extends State<Shell> {
           ),
         ),
         body: IndexedStack(index: tab, children: pages),
-        bottomNavigationBar: NavigationBar(
+        bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
+          InkWell(onTap: () => launchUrl(Uri.parse('https://aalioaali.com'), mode: LaunchMode.externalApplication), child: Container(width: double.infinity, color: Colors.white, padding: const EdgeInsets.symmetric(vertical: 7), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('طراحی و توسعه توسط ', style: TextStyle(fontSize: 10, color: Color(0xFF71808A))), Text('مجموعه عالی و عالی', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: teal)), SizedBox(width: 4), Icon(Icons.open_in_new, size: 11, color: teal)]))),
+          NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (value) => setState(() => tab = value),
           backgroundColor: Colors.white,
@@ -131,7 +130,8 @@ class _ShellState extends State<Shell> {
               label: 'حساب من',
             ),
           ],
-        ),
+          ),
+        ]),
       ),
     );
   }
