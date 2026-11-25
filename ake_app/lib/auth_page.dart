@@ -165,23 +165,15 @@ class _AuthPageState extends State<AuthPage> {
                 label: const Text('بررسی مجدد اتصال'),
               ),
             ] else ...[
-              Row(children: [
-                const Icon(Icons.check_circle_rounded, color: _mint),
-                const SizedBox(width: 8),
-                Expanded(child: Text('خوش آمدید، ' + (identity!['name'] ?? 'کاربر').toString(),
-                    style: const TextStyle(fontWeight: FontWeight.bold))),
-              ]),
-              const SizedBox(height: 14),
-              SizedBox(width: double.infinity, child: FilledButton(
-                onPressed: busy ? null : () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => DeliveryPage(token: token!, courier: false))),
-                child: const Text('موقعیت سفارش‌های من'),
-              )),
-              if (identity!['courier'] == true) SizedBox(width: double.infinity, child: FilledButton(
-                onPressed: busy ? null : () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => DeliveryPage(token: token!, courier: true))),
-                child: const Text('مأموریت‌های پیک'),
-              )),
+              Text('خوش آمدید، '+(identity!['name'] ?? 'کاربر').toString(), style: const TextStyle(fontSize: 23,fontWeight: FontWeight.w900,color: _dark)),
+              const SizedBox(height: 8),
+              Text(identity!['courier']==true?'حساب پیک مجاز':'حساب مشتری',style:const TextStyle(color:_mint)),
+              const SizedBox(height: 20),
+              _dashboardTile('سفارش‌های من','پیگیری سفارش و تعیین محل تحویل',Icons.inventory_2_outlined,false),
+              if(identity!['courier']==true) ...[
+                const SizedBox(height:12),
+                _dashboardTile('پنل اختصاصی پیک','مأموریت‌های تخصیص‌یافته و مسیریابی',Icons.local_shipping_outlined,true),
+              ],
             ],
           ]),
         ),
@@ -240,6 +232,11 @@ class _AuthPageState extends State<AuthPage> {
           style: TextStyle(color: Color(0xFF65737D), fontSize: 11, height: 1.7)),
       ],
     ],
+  );
+
+  Widget _dashboardTile(String title,String subtitle,IconData icon,bool courier)=>Material(
+    color:const Color(0xFFF0F7F7),borderRadius:BorderRadius.circular(18),
+    child:ListTile(contentPadding:const EdgeInsets.all(14),leading:CircleAvatar(backgroundColor:_dark,foregroundColor:Colors.white,child:Icon(icon)),title:Text(title,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text(subtitle),trailing:const Icon(Icons.chevron_left),onTap:busy?null:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>DeliveryPage(token:token!,courier:courier)))),
   );
 
   Widget _modeButton(String label, bool selected, VoidCallback onTap) => OutlinedButton(
