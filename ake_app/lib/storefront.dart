@@ -329,8 +329,11 @@ class Detail extends StatelessWidget {
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
           onPressed: p.inStock && p.type != 'variable' ? () async {
             var count = 1;
+            final selected = <String, String>{for (final a in p.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
             final ok = await showModalBottomSheet<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
               const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              for (final attribute in p.attributes.where((a) => a.values.isNotEmpty).take(5))
+                DropdownButtonFormField<String>(value: selected[attribute.name], decoration: InputDecoration(labelText: attribute.name), items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) selected[attribute.name] = v; }),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
                 Text('$count', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
