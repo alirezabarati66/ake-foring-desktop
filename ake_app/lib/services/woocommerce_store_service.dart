@@ -20,6 +20,16 @@ class WooCommerceStoreService {
     }
     return products;
   }
+  Future<List<StoreProduct>> fetchVariations(int parentId) async {
+    if (parentId <= 0) return const [];
+    final response = await _get('/products?type=variation&parent=$parentId&per_page=100');
+    return _decodeList(response).map((json) {
+      final normalized = Map<String, dynamic>.from(json);
+      normalized['type'] = 'variation';
+      normalized['parent'] ??= parentId;
+      return StoreProduct.fromJson(normalized);
+    }).where((variation) => variation.id > 0 && variation.inStock).toList();
+  }
   Future<List<StoreCategory>> fetchCategories() async {
     final response = await _get('/products/categories?per_page=100');
     return _decodeList(response).map(StoreCategory.fromJson).where((c) => c.id > 0 && c.name.isNotEmpty).toList();
