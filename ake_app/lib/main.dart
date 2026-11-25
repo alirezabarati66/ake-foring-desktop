@@ -5,9 +5,8 @@ import 'checkout_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'models/store_product.dart';
-import 'services/woocommerce_store_service.dart';
 
-const teal=Color(0xFF01ADA5), grey=Color(0xFF57595B), bg=Color(0xFFF3F6F6);
+const teal=Color(0xFF01ADA5), bg=Color(0xFFF3F6F6);
 void main()=>runApp(const AkeApp());
 class AkeApp extends StatelessWidget { const AkeApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(title:'AKE Forging',debugShowCheckedModeBanner:false,theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:teal),scaffoldBackgroundColor:bg,appBarTheme:const AppBarTheme(elevation:0,scrolledUnderElevation:0,backgroundColor:Colors.white),cardTheme:CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),home:const Shell()); }
 
