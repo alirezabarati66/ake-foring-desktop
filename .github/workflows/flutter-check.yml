@@ -20,6 +20,10 @@ jobs:
         with:
           channel: stable
           cache: true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: php -l wordpress/ake-delivery.php
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
