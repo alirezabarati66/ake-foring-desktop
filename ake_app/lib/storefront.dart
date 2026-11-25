@@ -322,8 +322,8 @@ class ProductTile extends StatelessWidget {
           const SizedBox(height: 7),
           Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: SizedBox(width: double.infinity, height: 36, child: FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: _ink, padding: const EdgeInsets.symmetric(horizontal: 5), visualDensity: VisualDensity.compact),
-            onPressed: p.inStock && p.isPurchasable ? () => _chooseQuantity(context) : null,
-            icon: const Icon(Icons.add_shopping_cart, size: 15), label: const Text('افزودن به سبد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            onPressed: !p.inStock ? null : p.isPurchasable ? () => _chooseQuantity(context) : () => launchUrl(Uri.parse(p.permalink), mode: LaunchMode.externalApplication),
+            icon: Icon(p.isPurchasable ? Icons.add_shopping_cart : Icons.open_in_new, size: 15), label: Text(!p.inStock ? 'ناموجود' : p.isPurchasable ? 'افزودن به سبد' : 'استعلام قیمت', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
           ))),
         ]),
       ),
@@ -379,7 +379,7 @@ class Detail extends StatelessWidget {
         ],
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
-          onPressed: p.inStock && p.isPurchasable ? () async {
+          onPressed: !p.inStock ? null : !p.isPurchasable ? () => launchUrl(Uri.parse(p.permalink), mode: LaunchMode.externalApplication) : () async {
             final item = await _resolveCartProduct(context, p);
             if (item == null || !context.mounted) return;
             var count = 1;
@@ -401,7 +401,7 @@ class Detail extends StatelessWidget {
             ])))));
             if (ok == true) { add(item, count, Map<String, String>.from(selected)); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد'))); }
           } : null,
-          icon: const Icon(Icons.shopping_bag_outlined), label: const Text('افزودن به سبد خرید'),
+          icon: Icon(p.isPurchasable ? Icons.shopping_bag_outlined : Icons.open_in_new), label: Text(p.isPurchasable ? 'افزودن به سبد خرید' : 'استعلام قیمت در سایت'),
         )),
       ]),
       bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
