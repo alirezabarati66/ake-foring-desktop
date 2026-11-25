@@ -14,7 +14,7 @@ class _MapPageState extends State<MapPage> {
   static const storageKey = 'ake_neshan_web_key';
   final secureStorage = const FlutterSecureStorage();
   final keyInput = TextEditingController();
-  final controller = NeshanMapController();
+  NeshanMapController controller = NeshanMapController();
 
   String? mapKey;
   String? mapError;
@@ -102,7 +102,7 @@ class _MapPageState extends State<MapPage> {
         if (mapKey != null)
           IconButton(
             tooltip: 'تغییر کلید Web نقشه',
-            onPressed: () => setState(() { mapKey = null; mapReady = false; mapError = null; keyInput.clear(); }),
+            onPressed: () { controller.dispose(); controller = NeshanMapController(); setState(() { mapKey = null; mapReady = false; mapError = null; keyInput.clear(); }); },
             icon: const Icon(Icons.key_outlined),
           ),
       ],
