@@ -21,9 +21,10 @@ class _ShellState extends State<Shell> {
   int tab = 0;
   final Map<int, StoreProduct> cart = {};
   final Map<int, int> qty = {};
+  final Map<int, Map<String, String>> selections = {};
 
-  void add(StoreProduct p, [int amount = 1]) {
-    setState(() { cart[p.id] = p; qty[p.id] = (qty[p.id] ?? 0) + amount; });
+  void add(StoreProduct p, int amount, Map<String, String> selected) {
+    setState(() { cart[p.id] = p; qty[p.id] = (qty[p.id] ?? 0) + amount; if (selected.isNotEmpty) selections[p.id] = selected; });
   }
 
   void change(int id, int delta) {
@@ -32,6 +33,7 @@ class _ShellState extends State<Shell> {
       if (next <= 0) {
         qty.remove(id);
         cart.remove(id);
+        selections.remove(id);
       } else {
         qty[id] = next;
       }
@@ -46,7 +48,7 @@ class _ShellState extends State<Shell> {
       Home(onAdd: add, onNavigate: (value) => setState(() => tab = value)),
       Shop(onAdd: add, onNavigate: (value) => setState(() => tab = value)),
       const News(),
-      Basket(cart: cart, qty: qty, change: change),
+      Basket(cart: cart, qty: qty, selections: selections, change: change),
       const AuthPage(),
     ];
 
@@ -148,8 +150,46 @@ class _ShellState extends State<Shell> {
   }
 }
 
-class Basket extends StatelessWidget{final Map<int,StoreProduct> cart;final Map<int,int> qty;final void Function(int,int) change;const Basket({super.key,required this.cart,required this.qty,required this.change});@override Widget build(BuildContext c){final ids=qty.keys.toList();return Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('سبد خرید',style:TextStyle(fontWeight:FontWeight.bold,fontSize:20))),Expanded(child:ids.isEmpty?const Center(child:Text('سبد خرید خالی است')):ListView(children:[for(final id in ids)if(cart[id]!=null)Card(color:Colors.white,child:ListTile(title:Text(cart[id]!.name),subtitle:Text(cart[id]!.displayPrice),trailing:Row(mainAxisSize:MainAxisSize.min,children:[IconButton(onPressed:()=>change(id,-1),icon:const Icon(Icons.remove)),Text(qty[id].toString()),IconButton(onPressed:()=>change(id,1),icon:const Icon(Icons.add))])))])),if(ids.isNotEmpty)Padding(padding:const EdgeInsets.all(16),child:SizedBox(width:double.infinity,child:FilledButton(onPressed: () async {final snapshot=Map<int,int>.from(qty);final id=await Navigator.of(c).push<int>(MaterialPageRoute(builder:(_)=>CheckoutPage(items:snapshot)));if(id!=null && c.mounted){for(final entry in snapshot.entries){change(entry.key,-entry.value);}ScaffoldMessenger.of(c).showSnackBar(SnackBar(content:Text('درخواست سفارش شماره $id ثبت شد')));}},style:FilledButton.styleFrom(backgroundColor:teal),child:const Text('ادامه و ثبت درخواست'))))]);}}
+class Basket extends StatelessWidget {
+  final Map<int, StoreProduct> cart;
+  final Map<int, int> qty;
+  final Map<int, Map<String, String>> selections;
+  final void Function(int, int) change;
+  const Basket({super.key, required this.cart, required this.qty, required this.selections, required this.change});
 
+  @override
+  Widget build(BuildContext context) {
+    final ids = qty.keys.toList();
+    return Column(children: [
+      const Padding(padding: EdgeInsets.all(16), child: Text('سبد خرید', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20))),
+      Expanded(child: ids.isEmpty ? const Center(child: Text('سبد خرید خالی است')) : ListView(padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+        for (final id in ids) if (cart[id] != null) Card(color: Colors.white, child: Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(cart[id]!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(cart[id]!.displayPrice, style: const TextStyle(color: teal)),
+          if ((selections[id] ?? {}).isNotEmpty) Text((selections[id]!).entries.map((e) => '${e.key}: ${e.value}').join(' | '), style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            IconButton(onPressed: () => change(id, -1), icon: const Icon(Icons.remove_circle_outline)),
+            Text(qty[id].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+            IconButton(onPressed: () => change(id, 1), icon: const Icon(Icons.add_circle_outline)),
+          ]),
+        ]))),
+      ])),
+      if (ids.isNotEmpty) Padding(padding: const EdgeInsets.all(16), child: SizedBox(width: double.infinity, child: FilledButton(
+        onPressed: () async {
+          final snapshot = Map<int, int>.from(qty);
+          final optionSnapshot = {for (final e in selections.entries) e.key: Map<String, String>.from(e.value)};
+          final id = await Navigator.of(context).push<int>(MaterialPageRoute(builder: (_) => CheckoutPage(items: snapshot, selections: optionSnapshot)));
+          if (id != null && context.mounted) {
+            for (final entry in snapshot.entries) { change(entry.key, -entry.value); }
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('درخواست سفارش شماره $id ثبت شد')));
+          }
+        },
+        style: FilledButton.styleFrom(backgroundColor: teal),
+        child: const Text('ادامه و ثبت درخواست'),
+      ))),
+    ]);
+  }
+}
 
 class News extends StatefulWidget {
   const News({super.key});
