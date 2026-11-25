@@ -91,29 +91,29 @@ class DigitsService {
     }
   }
 
-  Future<String> authenticate(String phone, String otp,
-      {bool register = false, String name = ''}) async {
+  Future<String> authenticate(String phone, {String? otp, String? password, bool register = false, String name = ''}) async {
     final number = normalize(phone);
-    final normalizedOtp = otp.trim().replaceAll(RegExp(r'\s'), '');
-    if (normalizedOtp.isEmpty) {
-      throw const DigitsApiException('کد پیامک را وارد کنید.');
+    if ((otp == null || otp.trim().isEmpty) && (password == null || password.isEmpty)) {
+      throw const DigitsApiException('کد یک‌بارمصرف یا رمز عبور را وارد کنید.');
     }
     final response = await request(register ? 'create_user' : 'login_user', {
       if (register) ...{
         'digits_reg_mobile': number,
         'digits_reg_countrycode': '+98',
         'digits_reg_name': name.trim(),
+        'digits_reg_firstname': name.trim(),
       } else ...{
         'user': number,
         'countrycode': '+98',
       },
-      'otp': normalizedOtp,
+      if (otp != null && otp.trim().isNotEmpty) 'otp': otp.trim(),
+      if (password != null && password.isNotEmpty) 'password': password,
+      'type': register ? 'register' : 'login',
     });
     final data = response['data'];
     if (response['success'] != true || data is! Map ||
-        data['access_token'] is! String ||
-        (data['access_token'] as String).isEmpty) {
-      throw const DigitsApiException('ورود تأیید شد اما توکن حساب کاربری دریافت نشد.');
+        data['access_token'] is! String || (data['access_token'] as String).isEmpty) {
+      throw DigitsApiException(_message(response, 200));
     }
     return data['access_token'] as String;
   }
