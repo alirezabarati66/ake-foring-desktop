@@ -36,7 +36,7 @@ add_action('rest_api_init', function(){
         'permission_callback'=>function(){return is_user_logged_in() && current_user_can('ake_deliver_orders');},
         'callback'=>function(){
             if(!function_exists('wc_get_orders')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
-            $orders=wc_get_orders(['limit'=>100,'status'=>['processing','on-hold'],'meta_query'=>[['key'=>'_ake_courier_id','value'=>get_current_user_id(),'compare'=>'=']]]);
+            $orders=wc_get_orders(['limit'=>100,'status'=>['pending','on-hold','processing'],'meta_query'=>[['key'=>'_ake_courier_id','value'=>get_current_user_id(),'compare'=>'=']]]);
             $out=[];
             foreach($orders as $o){
                 if((int)$o->get_meta('_ake_courier_id')!==get_current_user_id()) continue;
@@ -60,7 +60,7 @@ add_action('rest_api_init',function(){
  'callback'=>function(){
  if(!function_exists('wc_get_orders')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
  $out=[];
- foreach(wc_get_orders(['customer_id'=>get_current_user_id(),'limit'=>50,'status'=>['pending','on-hold']]) as $o){
+ foreach(wc_get_orders(['customer_id'=>get_current_user_id(),'limit'=>50,'orderby'=>'date','order'=>'DESC']) as $o){
  if((int)$o->get_customer_id()!==get_current_user_id()) continue;
  $out[]=['id'=>$o->get_id(),'number'=>$o->get_order_number(),'status'=>$o->get_status(),'date'=>$o->get_date_created() ? $o->get_date_created()->date_i18n('Y/m/d H:i') : '','total'=>$o->get_formatted_order_total(),'delivery_status'=>$o->get_meta('_ake_delivery_status') ?: 'waiting'];
  }
@@ -99,7 +99,11 @@ add_action('rest_api_init',function(){
  foreach($items as $id=>$qty){
  if(!ctype_digit((string)$id)||!is_int($qty)||$qty<1||$qty>1000) return new WP_Error('invalid_item','Invalid item',['status'=>400]);
  $p=wc_get_product((int)$id);
- if(!$p||!$p->is_type('simple')||!$p->is_purchasable()||!$p->is_in_stock()||!$p->has_enough_stock($qty)||($p->is_sold_individually()&&$qty>1)) return new WP_Error('unavailable_item','Product unavailable',['status'=>409]);
+ if(!$p || (!$p->is_type('simple') && !$p->is_type('variation')) || !$p->is_purchasable() || !$p->is_in_stock() || !$p->has_enough_stock($qty) || ($p->is_sold_individually() && $qty>1)) return new WP_Error('unavailable_item','Product unavailable',['status'=>409]);
+ if($p->is_type('variation')) {
+  $parent=wc_get_product($p->get_parent_id());
+  if(!$parent || !$parent->is_type('variable')) return new WP_Error('invalid_variation','Invalid product variation',['status'=>400]);
+ }
  $products[]=[$p,$qty];
  }
  $o=null;
@@ -146,6 +150,7 @@ add_action('rest_api_init',function(){
   'permission_callback'=>function(){return is_user_logged_in() && current_user_can('ake_deliver_orders');},
   'callback'=>function($request){
    $order=wc_get_order((int)$request['id']);
+   if(!function_exists('wc_get_order')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
    if(!$order || (int)$order->get_meta('_ake_courier_id')!==get_current_user_id()) return new WP_Error('forbidden','Mission not assigned to this courier',['status'=>403]);
    $status=sanitize_key((string)$request->get_param('status'));
    $allowed=['accepted','picked_up','out_for_delivery','delivered'];
