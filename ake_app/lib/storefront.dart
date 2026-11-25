@@ -276,63 +276,80 @@ class ProductTile extends StatelessWidget {
 
 class Detail extends StatelessWidget {
   final StoreProduct p;
-  final ValueChanged<StoreProduct> add;
-  const Detail({super.key, required this.p, required this.add});
+  final AddProduct add;
+  final ValueChanged<int> onNavigate;
+  const Detail({super.key, required this.p, required this.add, required this.onNavigate});
   @override
   Widget build(BuildContext context) => Directionality(
     textDirection: TextDirection.rtl,
     child: Scaffold(
-      appBar: AppBar(title: const Text('مشخصات محصول')),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      backgroundColor: _panel,
+      appBar: AppBar(
+        backgroundColor: _ink,
+        foregroundColor: Colors.white,
+        title: const Text('جزئیات محصول', style: TextStyle(fontWeight: FontWeight.w800)),
+        actions: [IconButton(onPressed: () => onNavigate(3), icon: const Icon(Icons.shopping_bag_outlined))],
+      ),
+      body: ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 20), children: [
         Container(
-          height: 280,
-          decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(22)),
+          height: 255,
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
           child: p.imageUrl.isEmpty ? const Icon(Icons.precision_manufacturing, color: _accent, size: 84)
-            : Image.network(p.imageUrl, cacheWidth: 900, fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(Icons.precision_manufacturing, color: _accent, size: 84)),
+            : Image.network(p.imageUrl, cacheWidth: 900, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.precision_manufacturing, color: _accent, size: 84)),
         ),
         const SizedBox(height: 16),
         Text(p.name, style: const TextStyle(color: _ink, fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
-        Text(p.sku.isEmpty ? 'شناسه: ' + p.id.toString() : 'کد فنی: ' + p.sku,
-          style: const TextStyle(color: _muted)),
+        Text(p.sku.isEmpty ? 'شناسه: ' + p.id.toString() : 'کد فنی: ' + p.sku, style: const TextStyle(color: _muted)),
         const SizedBox(height: 12),
-        Text(p.displayPrice.isEmpty ? 'استعلام قیمت' : p.displayPrice,
-          style: const TextStyle(color: _accent, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(p.displayPrice.isEmpty ? 'استعلام قیمت' : p.displayPrice, style: const TextStyle(color: _accent, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 7),
         Text(p.inStock ? 'موجود در انبار' : 'ناموجود', style: TextStyle(color: p.inStock ? _accent : Colors.red)),
         const SizedBox(height: 18),
         if (p.shortDescription.isNotEmpty) ...[
-          const _SectionHeading(title: 'معرفی کوتاه', subtitle: 'اطلاعات فروشگاه'),
-          const SizedBox(height: 8),
-          ProductHtml(html: p.shortDescription),
-          const SizedBox(height: 18),
+          const _SectionHeading(title: 'معرفی کوتاه', subtitle: 'اطلاعات فروشگاه'), const SizedBox(height: 8),
+          ProductHtml(html: p.shortDescription), const SizedBox(height: 18),
         ],
         if (p.description.isNotEmpty) ...[
-          const _SectionHeading(title: 'توضیحات و مشخصات فنی', subtitle: 'برگرفته از محتوای محصول در وردپرس'),
-          const SizedBox(height: 8),
-          ProductHtml(html: p.description),
-          const SizedBox(height: 18),
+          const _SectionHeading(title: 'توضیحات و مشخصات فنی', subtitle: 'برگرفته از محتوای محصول در وردپرس'), const SizedBox(height: 8),
+          ProductHtml(html: p.description), const SizedBox(height: 18),
         ],
         if (p.attributes.isNotEmpty) ...[
-          const _SectionHeading(title: 'ویژگی‌های محصول', subtitle: 'اطلاعات ثبت‌شده در فروشگاه'),
-          const SizedBox(height: 9),
-          Table(
-            border: TableBorder.all(color: const Color(0xFFE2E9EB), borderRadius: BorderRadius.circular(8)),
-            children: [for (final item in p.attributes) TableRow(children: [
-              _tableCell(item.name, bold: true), _tableCell(item.values.join('، ')),
-            ])],
-          ),
+          const _SectionHeading(title: 'ویژگی‌های محصول', subtitle: 'اطلاعات ثبت‌شده در فروشگاه'), const SizedBox(height: 9),
+          Table(border: TableBorder.all(color: const Color(0xFFE2E9EB), borderRadius: BorderRadius.circular(8)),
+            children: [for (final item in p.attributes) TableRow(children: [_tableCell(item.name, bold: true), _tableCell(item.values.join('، '))])]),
           const SizedBox(height: 18),
         ],
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
-          onPressed: p.inStock ? () { add(p); ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('به سبد خرید اضافه شد'))); } : null,
-          icon: const Icon(Icons.shopping_bag_outlined),
-          label: const Text('افزودن به سبد خرید'),
+          onPressed: p.inStock ? () async {
+            var count = 1;
+            final ok = await showModalBottomSheet<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
+                Text('$count', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                IconButton(onPressed: count < 99 ? () => setSheet(() => count++) : null, icon: const Icon(Icons.add_circle_outline)),
+              ]),
+              SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('افزودن به سبد خرید'))),
+            ])))));
+            if (ok == true) { add(p, count); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد'))); }
+          } : null,
+          icon: const Icon(Icons.shopping_bag_outlined), label: const Text('افزودن به سبد خرید'),
         )),
       ]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 1,
+        onDestinationSelected: (index) { Navigator.of(context).pop(); onNavigate(index); },
+        backgroundColor: Colors.white,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'خانه'),
+          NavigationDestination(icon: Icon(Icons.store_outlined), label: 'فروشگاه'),
+          NavigationDestination(icon: Icon(Icons.article_outlined), label: 'اخبار'),
+          NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), label: 'سبد خرید'),
+          NavigationDestination(icon: Icon(Icons.person_outline), label: 'حساب من'),
+        ],
+      ),
     ),
   );
 }
