@@ -1,6 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+class DigitsApiException implements Exception {
+  final String message;
+  const DigitsApiException(this.message);
+  @override
+  String toString() => message;
+}
+
 class DigitsService {
   static const base = 'https://www.ake-forging.com/wp-json';
   final http.Client client;
@@ -13,45 +20,100 @@ class DigitsService {
       s = s.replaceAll(fa[i], '$i').replaceAll(ar[i], '$i');
     }
     s = s.replaceAll(RegExp(r'[\s-]'), '');
-    if (s.startsWith('+98')) s = s.substring(3);
-    else if (s.startsWith('0098')) s = s.substring(4);
-    else if (s.startsWith('0')) s = s.substring(1);
+    if (s.startsWith('+98')) {
+      s = s.substring(3);
+    } else if (s.startsWith('0098')) {
+      s = s.substring(4);
+    } else if (s.startsWith('0')) {
+      s = s.substring(1);
+    }
     if (!RegExp(r'^9[0-9]{9}$').hasMatch(s)) {
-      throw const FormatException('شماره موبایل معتبر نیست');
+      throw const DigitsApiException('شماره موبایل باید به صورت ۰۹۱۲۳۴۵۶۷۸۹ باشد.');
     }
     return s;
   }
 
-  Future<Map<String, dynamic>> request(String path, Map<String,String> body, {String? token}) async {
-    final r = await client.post(Uri.parse('$base/digits/v1/$path/'),
-      headers: {'Accept':'application/json', if(token != null) 'Authorization':'Bearer $token'},
-      body: body).timeout(const Duration(seconds: 25));
-    final value = jsonDecode(utf8.decode(r.bodyBytes));
-    if (value is! Map<String,dynamic>) throw const FormatException('پاسخ نامعتبر سرور');
-    if (r.statusCode >= 400 || value['success'] == false) {
-      final data = value['data'];
-      throw Exception(data is Map ? (data['message'] ?? data['msg'] ?? 'خطای احراز هویت') : 'خطای احراز هویت');
+  static String _message(Map<String, dynamic> body, int httpStatus) {
+    final data = body['data'];
+    if (data is Map) {
+      for (final key in ['message', 'msg', 'error']) {
+        if (data[key] is String && (data[key] as String).trim().isNotEmpty) return data[key] as String;
+      }
     }
-    return value;
+    for (final key in ['message', 'msg']) {
+      if (body[key] is String && (body[key] as String).trim().isNotEmpty) return body[key] as String;
+    }
+    if (httpStatus == 403 || httpStatus == 401) {
+      return 'سرور اجازه دسترسی به ورود را نداد (HTTP $httpStatus).';
+    }
+    return 'سرویس ورود پاسخ ناموفق داد (HTTP $httpStatus).';
+  }
+
+  Future<Map<String, dynamic>> request(String path, Map<String, String> body, {String? token}) async {
+    final http.Response response;
+    try {
+      response = await client.post(
+        Uri.parse('$base/digits/v1/$path/'),
+        headers: <String, String>{
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: body,
+      ).timeout(const Duration(seconds: 30));
+    } catch (_) {
+      throw const DigitsApiException('ارتباط با سرور پیامک برقرار نشد؛ اتصال اینترنت را بررسی کنید.');
+    }
+    dynamic parsed;
+    try {
+      parsed = jsonDecode(utf8.decode(response.bodyBytes));
+    } catch (_) {
+      throw const DigitsApiException('پاسخ سرور Digits به‌صورت JSON معتبر دریافت نشد.');
+    }
+    if (parsed is! Map<String, dynamic>) {
+      throw const DigitsApiException('ساختار پاسخ Digits معتبر نیست.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300 || parsed['success'] == false) {
+      throw DigitsApiException(_message(parsed, response.statusCode));
+    }
+    return parsed;
   }
 
   Future<void> sendOtp(String phone, {bool register = false, bool resend = false}) async {
-    final r = await request(resend ? 'resend_otp' : 'send_otp', {
-      'countrycode': '+98', 'mobileNo': normalize(phone), 'type': register ? 'register' : 'login',
+    final response = await request(resend ? 'resend_otp' : 'send_otp', {
+      'countrycode': '+98',
+      'mobileNo': normalize(phone),
+      'type': register ? 'register' : 'login',
     });
-    if (r['code'].toString() != '1') throw Exception(r['message'] ?? 'ارسال کد تایید نشد');
+    // Digits OTP endpoints use code=1; some configured gateways return success=true.
+    final code = response['code']?.toString();
+    if (code != '1' && response['success'] != true) {
+      throw DigitsApiException(_message(response, 200));
+    }
   }
 
-  Future<String> authenticate(String phone, String otp, {bool register = false, String name = ''}) async {
+  Future<String> authenticate(String phone, String otp,
+      {bool register = false, String name = ''}) async {
     final number = normalize(phone);
-    final r = await request(register ? 'create_user' : 'login_user', {
-      if(register) ...{'digits_reg_mobile':number,'digits_reg_countrycode':'+98','digits_reg_name':name.trim()}
-      else ...{'user':number,'countrycode':'+98'},
-      'otp':otp.trim(),
+    final normalizedOtp = otp.trim().replaceAll(RegExp(r'\s'), '');
+    if (normalizedOtp.isEmpty) {
+      throw const DigitsApiException('کد پیامک را وارد کنید.');
+    }
+    final response = await request(register ? 'create_user' : 'login_user', {
+      if (register) ...{
+        'digits_reg_mobile': number,
+        'digits_reg_countrycode': '+98',
+        'digits_reg_name': name.trim(),
+      } else ...{
+        'user': number,
+        'countrycode': '+98',
+      },
+      'otp': normalizedOtp,
     });
-    final data = r['data'];
-    if(r['success'] != true || data is! Map || data['access_token'] is! String || (data['access_token'] as String).isEmpty) {
-      throw const FormatException('توکن ورود دریافت نشد');
+    final data = response['data'];
+    if (response['success'] != true || data is! Map ||
+        data['access_token'] is! String ||
+        (data['access_token'] as String).isEmpty) {
+      throw const DigitsApiException('ورود تأیید شد اما توکن حساب کاربری دریافت نشد.');
     }
     return data['access_token'] as String;
   }
@@ -59,5 +121,6 @@ class DigitsService {
   Future<void> logout(String token) async {
     await request('logout', {}, token: token);
   }
+
   void dispose() => client.close();
 }
