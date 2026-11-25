@@ -7,9 +7,12 @@ const _accent = Color(0xFF00A99D);
 const _muted = Color(0xFF637785);
 const _panel = Color(0xFFF3F7F8);
 
+typedef AddProduct = void Function(StoreProduct product, int quantity);
+
 class Home extends StatelessWidget {
-  final ValueChanged<StoreProduct> onAdd;
-  const Home({super.key, required this.onAdd});
+  final AddProduct onAdd;
+  final ValueChanged<int> onNavigate;
+  const Home({super.key, required this.onAdd, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) => CustomScrollView(
@@ -19,34 +22,34 @@ class Home extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const _WelcomeHeading(),
           const SizedBox(height: 16),
-          SizedBox(height: 205, child: PageView(children: const [
+          SizedBox(height: 205, child: PageView(children: [
             _CampaignBanner(
               title: 'قدرت در هر قطعه',
               subtitle: 'فناوری فورج، دقت تولید و کیفیت صنعتی',
               label: 'آریان کوب اسپادانا',
               colors: [_ink, Color(0xFF246A73)],
-              icon: Icons.precision_manufacturing_rounded,
+              imageUrl: 'https://images.unsplash.com/photo-1661571094656-1887a27885db?fit=crop&w=1100&h=560&q=78&fm=jpg',
             ),
             _CampaignBanner(
               title: 'تأمین مطمئن قطعات',
               subtitle: 'محصولات تخصصی برای صنعت خودرو',
               label: 'مجموعه محصولات',
               colors: [Color(0xFF006F6D), Color(0xFF17B6A8)],
-              icon: Icons.settings_suggest_rounded,
+              imageUrl: 'https://images.unsplash.com/photo-1572367417026-d26cb9c9b922?fit=crop&w=1100&h=560&q=78&fm=jpg',
             ),
             _CampaignBanner(
               title: 'از انتخاب تا سفارش',
               subtitle: 'مشخصات فنی و اطلاعات کالا در یک نگاه',
               label: 'خرید هوشمند',
               colors: [Color(0xFF2D415E), Color(0xFF647C95)],
-              icon: Icons.inventory_2_rounded,
+              imageUrl: 'https://images.unsplash.com/photo-1600683729960-0b586e23ec3b?fit=crop&w=1100&h=560&q=78&fm=jpg',
             ),
           ])),
           const SizedBox(height: 19),
           const _SectionHeading(title: 'محصولات منتخب', subtitle: 'مشاهده کالاها و جزئیات فنی'),
         ]),
       )),
-      SliverToBoxAdapter(child: ProductList(onAdd: onAdd, embedded: true)),
+      SliverToBoxAdapter(child: ProductList(onAdd: onAdd, onNavigate: onNavigate, embedded: true)),
       const SliverToBoxAdapter(child: SizedBox(height: 32)),
     ],
   );
@@ -79,8 +82,8 @@ class _SectionHeading extends StatelessWidget {
 class _CampaignBanner extends StatelessWidget {
   final String title, subtitle, label;
   final List<Color> colors;
-  final IconData icon;
-  const _CampaignBanner({required this.title, required this.subtitle, required this.label, required this.colors, required this.icon});
+  final String imageUrl;
+  const _CampaignBanner({required this.title, required this.subtitle, required this.label, required this.colors, required this.imageUrl});
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsetsDirectional.only(end: 9),
@@ -90,7 +93,8 @@ class _CampaignBanner extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
     ),
     child: Stack(children: [
-      Positioned(left: -30, top: -40, child: Icon(icon, size: 230, color: Colors.white.withValues(alpha: .13))),
+      Positioned.fill(child: Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink())),
+      Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.black.withValues(alpha: .72), colors.last.withValues(alpha: .38)], begin: Alignment.centerRight, end: Alignment.centerLeft)))),
       Positioned(left: 14, bottom: -34, child: Container(width: 150, height: 150, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: .12), width: 26)))),
       Padding(padding: const EdgeInsets.all(23), child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,22 +114,24 @@ class _CampaignBanner extends StatelessWidget {
 }
 
 class Shop extends StatelessWidget {
-  final ValueChanged<StoreProduct> onAdd;
-  const Shop({super.key, required this.onAdd});
+  final AddProduct onAdd;
+  final ValueChanged<int> onNavigate;
+  const Shop({super.key, required this.onAdd, required this.onNavigate});
   @override
   Widget build(BuildContext context) => Column(children: [
     const Padding(
       padding: EdgeInsets.fromLTRB(16, 18, 16, 5),
       child: _SectionHeading(title: 'فروشگاه آریان کوب', subtitle: 'دسته‌بندی تخصصی قطعات خودرو'),
     ),
-    Expanded(child: ProductList(onAdd: onAdd)),
+    Expanded(child: ProductList(onAdd: onAdd, onNavigate: onNavigate)),
   ]);
 }
 
 class ProductList extends StatefulWidget {
-  final ValueChanged<StoreProduct> onAdd;
+  final AddProduct onAdd;
+  final ValueChanged<int> onNavigate;
   final bool embedded;
-  const ProductList({super.key, required this.onAdd, this.embedded = false});
+  const ProductList({super.key, required this.onAdd, required this.onNavigate, this.embedded = false});
   @override
   State<ProductList> createState() => _ProductListState();
 }
@@ -176,7 +182,7 @@ class _ProductListState extends State<ProductList> {
             crossAxisSpacing: 12,
             mainAxisExtent: 260,
           ),
-          itemBuilder: (context, index) => ProductTile(p: items[index], add: widget.onAdd),
+          itemBuilder: (context, index) => ProductTile(p: items[index], add: widget.onAdd, onNavigate: widget.onNavigate),
         ),
         if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: const TextStyle(color: Colors.red))),
         if (more || error != null) Padding(
@@ -198,42 +204,70 @@ class _ProductListState extends State<ProductList> {
 
 class ProductTile extends StatelessWidget {
   final StoreProduct p;
-  final ValueChanged<StoreProduct> add;
-  const ProductTile({super.key, required this.p, required this.add});
+  final AddProduct add;
+  final ValueChanged<int> onNavigate;
+  const ProductTile({super.key, required this.p, required this.add, required this.onNavigate});
+
+  Future<void> _chooseQuantity(BuildContext context) async {
+    var quantity = 1;
+    await showModalBottomSheet<void>(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(20, 18, 20, 20 + MediaQuery.of(ctx).viewInsets.bottom),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [const Expanded(child: Text('افزودن به سبد خرید', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: _ink))), IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close))]),
+            ListTile(contentPadding: EdgeInsets.zero, leading: p.imageUrl.isEmpty ? const Icon(Icons.settings) : Image.network(p.imageUrl, width: 58, height: 58, fit: BoxFit.contain), title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(p.displayPrice.isEmpty ? 'استعلام قیمت' : p.displayPrice)),
+            if (p.attributes.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text('مشخصات و اندازه‌های ثبت‌شده', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              for (final attribute in p.attributes.take(4))
+                Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Text('${attribute.name}: ${attribute.values.join('، ')}', style: const TextStyle(color: _muted, fontSize: 12))),
+            ],
+            const SizedBox(height: 12),
+            Row(children: [
+              const Expanded(child: Text('تعداد مورد نیاز', style: TextStyle(fontWeight: FontWeight.bold))),
+              IconButton(onPressed: quantity > 1 ? () => setSheet(() => quantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
+              Text('$quantity', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+              IconButton(onPressed: quantity < 99 ? () => setSheet(() => quantity++) : null, icon: const Icon(Icons.add_circle_outline)),
+            ]),
+            SizedBox(width: double.infinity, child: FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.symmetric(vertical: 14)),
+              onPressed: () { add(p, quantity); Navigator.pop(ctx); },
+              icon: const Icon(Icons.shopping_bag_outlined), label: const Text('تأیید و افزودن به سبد'),
+            )),
+          ]),
+        ),
+      )),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Material(
-    color: Colors.white,
-    elevation: 0,
-    borderRadius: BorderRadius.circular(18),
-    clipBehavior: Clip.antiAlias,
+    color: Colors.white, elevation: 0, borderRadius: BorderRadius.circular(18), clipBehavior: Clip.antiAlias,
     child: InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => Detail(p: p, add: add))),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => Detail(p: p, add: add, onNavigate: onNavigate))),
       child: Container(
         decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE4EBEF)), borderRadius: BorderRadius.circular(18)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(8),
+            width: double.infinity, margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(13)),
-            child: p.imageUrl.isEmpty
-              ? const Icon(Icons.precision_manufacturing_rounded, color: _accent, size: 48)
-              : Image.network(p.imageUrl, fit: BoxFit.contain, cacheWidth: 480,
-                  errorBuilder: (_, _, _) => const Icon(Icons.precision_manufacturing_rounded, color: _accent, size: 48)),
+            child: p.imageUrl.isEmpty ? const Icon(Icons.precision_manufacturing_rounded, color: _accent, size: 48)
+              : Image.network(p.imageUrl, fit: BoxFit.contain, cacheWidth: 480, errorBuilder: (_, _, _) => const Icon(Icons.precision_manufacturing_rounded, color: _accent, size: 48)),
           )),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(p.name,
-            maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: _ink, height: 1.3, fontSize: 12, fontWeight: FontWeight.w800))),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _ink, height: 1.3, fontSize: 12, fontWeight: FontWeight.w800))),
           const SizedBox(height: 4),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(
-            p.displayPrice.isNotEmpty ? p.displayPrice : 'استعلام قیمت',
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: _accent, fontSize: 12, fontWeight: FontWeight.w900),
-          )),
-          const SizedBox(height: 6),
-          Container(width: double.infinity, color: const Color(0xFFEAF6F4),
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            child: const Text('مشاهده مشخصات', textAlign: TextAlign.center,
-              style: TextStyle(color: _ink, fontSize: 11, fontWeight: FontWeight.w700))),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text(p.displayPrice.isNotEmpty ? p.displayPrice : 'استعلام قیمت', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _accent, fontSize: 12, fontWeight: FontWeight.w900))),
+          const SizedBox(height: 7),
+          Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: SizedBox(width: double.infinity, height: 36, child: FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: _ink, padding: const EdgeInsets.symmetric(horizontal: 5), visualDensity: VisualDensity.compact),
+            onPressed: p.inStock ? () => _chooseQuantity(context) : null,
+            icon: const Icon(Icons.add_shopping_cart, size: 15), label: const Text('افزودن به سبد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          ))),
         ]),
       ),
     ),
