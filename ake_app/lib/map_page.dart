@@ -57,7 +57,9 @@ class _MapPageState extends State<MapPage> {
       ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('کلید وب نقشه نشان وارد نشده است. هنگام ساخت برنامه NESHAN_WEB_KEY را تنظیم کنید.', textAlign: TextAlign.center)))
       : Stack(children: [
           Positioned.fill(child: NeshanMap(
+            key: const ValueKey('ake-neshan-map'),
             mapKey: mapKey,
+            enableDebug: true,
             controller: controller,
             config: NeshanMapConfig(
               initialCenter: const LatLng(32.6546, 51.6680),
@@ -79,7 +81,7 @@ class _MapPageState extends State<MapPage> {
             const Positioned(top: 12, left: 12, right: 12, child: LinearProgressIndicator()),
           if (mapError != null)
             Positioned(top: 12, left: 12, right: 12, child: Card(color: Colors.white, child: Padding(
-              padding: const EdgeInsets.all(12), child: Text('خطای بارگذاری نقشه: $mapError', style: const TextStyle(color: Colors.red)),
+              padding: const EdgeInsets.all(12), child: Text('خطای بارگذاری نقشه: $mapError\nاگر کلید از نوع Mobile است، آن را با کلید Web جایگزین کنید. دسترسی اینترنت WebView و سرویس نقشه پایه را هم بررسی کنید.', style: const TextStyle(color: Colors.red)),
             ))),
         ]),
     bottomNavigationBar: SafeArea(child: Padding(
