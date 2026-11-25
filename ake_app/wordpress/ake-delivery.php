@@ -4,6 +4,16 @@
  * Version: 0.1.0
  */
 defined('ABSPATH') || exit;
+// Digits REST API 2.3 omits user_id from a successful registration response.
+// Its create_user handler then passes 0 to digrest_create_token(), returning
+// "Error: Unexpected user". Restore the user ID expected by that handler.
+add_filter('digits_user_created_response', function($data, $user_id) {
+    if (is_array($data) && !empty($data['success']) && is_array($data['data'] ?? null)) {
+        $data['data']['user_id'] = (int) $user_id;
+    }
+    return $data;
+}, 10, 2);
+
 add_action('rest_api_init', function(){
     register_rest_route('ake/v1','/orders/(?P<id>\d+)/location',[
         'methods'=>'POST',
@@ -32,7 +42,7 @@ add_action('rest_api_init', function(){
                 if((int)$o->get_meta('_ake_courier_id')!==get_current_user_id()) continue;
                 $lat=$o->get_meta('_ake_lat'); $lng=$o->get_meta('_ake_lng');
                 if(!is_numeric($lat)||!is_numeric($lng)) continue;
-                $out[]=['id'=>$o->get_id(),'lat'=>(float)$lat,'lng'=>(float)$lng,'address'=>$o->get_shipping_address_1() ?: $o->get_billing_address_1()];
+                $out[]=['id'=>$o->get_id(),'number'=>$o->get_order_number(),'lat'=>(float)$lat,'lng'=>(float)$lng,'address'=>$o->get_shipping_address_1() ?: $o->get_billing_address_1(),'customer'=>$o->get_formatted_billing_full_name(),'phone'=>$o->get_billing_phone(),'status'=>$o->get_status(),'delivery_status'=>$o->get_meta('_ake_delivery_status') ?: 'assigned','total'=>$o->get_formatted_order_total()];
             }
             return rest_ensure_response($out);
         }
@@ -52,7 +62,7 @@ add_action('rest_api_init',function(){
  $out=[];
  foreach(wc_get_orders(['customer_id'=>get_current_user_id(),'limit'=>50,'status'=>['pending','on-hold']]) as $o){
  if((int)$o->get_customer_id()!==get_current_user_id()) continue;
- $out[]=['id'=>$o->get_id(),'number'=>$o->get_order_number(),'status'=>$o->get_status()];
+ $out[]=['id'=>$o->get_id(),'number'=>$o->get_order_number(),'status'=>$o->get_status(),'date'=>$o->get_date_created() ? $o->get_date_created()->date_i18n('Y/m/d H:i') : '','total'=>$o->get_formatted_order_total(),'delivery_status'=>$o->get_meta('_ake_delivery_status') ?: 'waiting'];
  }
  return $out;
  }
@@ -111,5 +121,24 @@ add_action('rest_api_init',function(){
  return new WP_Error('order_error','Unable to create order',['status'=>500]);
  }
  }
+ ]);
+});
+
+add_action('rest_api_init',function(){
+ register_rest_route('ake/v1','/missions/(?P<id>\\d+)/status',[
+  'methods'=>'POST',
+  'permission_callback'=>function(){return is_user_logged_in() && current_user_can('ake_deliver_orders');},
+  'callback'=>function($request){
+   $order=wc_get_order((int)$request['id']);
+   if(!$order || (int)$order->get_meta('_ake_courier_id')!==get_current_user_id()) return new WP_Error('forbidden','Mission not assigned to this courier',['status'=>403]);
+   $status=sanitize_key((string)$request->get_param('status'));
+   $allowed=['accepted','picked_up','out_for_delivery','delivered'];
+   if(!in_array($status,$allowed,true)) return new WP_Error('invalid_status','Invalid delivery status',['status'=>400]);
+   $order->update_meta_data('_ake_delivery_status',$status);
+   $order->update_meta_data('_ake_delivery_status_updated',current_time('mysql'));
+   if($status==='delivered') $order->add_order_note(__('Delivery marked as delivered from AKE Courier App.','ake'));
+   $order->save();
+   return ['saved'=>true,'status'=>$status,'order_id'=>$order->get_id()];
+  }
  ]);
 });
