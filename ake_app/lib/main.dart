@@ -57,11 +57,15 @@ class _ShellState extends State<Shell> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: Row(children: const [
-            Image(image: NetworkImage('https://www.ake-forging.com/wp-content/uploads/2019/09/logo-300x51.png'), width: 112, height: 30, fit: BoxFit.contain,
-              errorBuilder: null),
-            SizedBox(width: 8),
-            Expanded(child: Text('آریان کوب اسپادانا', overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14))),
+          title: Row(children: [
+            Image.network(
+              'https://www.ake-forging.com/wp-content/uploads/2019/09/logo-300x51.png',
+              width: 112, height: 30, fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const Icon(Icons.precision_manufacturing_rounded, color: teal),
+            ),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('آریان کوب اسپادانا', overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14))),
           ]),
           actions: [
             IconButton(
