@@ -111,7 +111,7 @@ class _MapPageState extends State<MapPage> {
       ? _keySetup()
       : Stack(children: [
           Positioned.fill(child: NeshanMap(
-            key: const ValueKey('ake-neshan-map'),
+            key: ValueKey(mapKey),
             mapKey: mapKey!,
             controller: controller,
             enableDebug: true,
