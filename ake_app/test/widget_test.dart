@@ -35,4 +35,24 @@ void main() {
     expect(product.attributes.first.values, ['فولاد']);
     expect(product.displayPrice, '1,800,000 تومان');
   });
+  test('detects WooCommerce variable parent products and child variations', () {
+    final variable = StoreProduct.fromJson({
+      'id': 400, 'name': 'فلنج متغیر', 'has_options': true,
+      'is_in_stock': true, 'is_purchasable': true,
+      'prices': {'price': '0', 'currency_minor_unit': 0},
+      'attributes': [{'name': 'سایز', 'terms': [{'name': 'DN50'}, {'name': 'DN80'}]}],
+    });
+    final variation = StoreProduct.fromJson({
+      'id': 401, 'parent': 400, 'name': 'فلنج متغیر - DN80',
+      'is_in_stock': true, 'is_purchasable': true,
+      'prices': {'price': '2500000', 'currency_code': 'IRT', 'currency_minor_unit': 0},
+      'attributes': [{'name': 'سایز', 'value': 'DN80'}],
+    });
+    expect(variable.type, 'variable');
+    expect(variation.type, 'variation');
+    expect(variation.parentId, 400);
+    expect(variation.attributes.single.values, ['DN80']);
+    expect(variation.isPurchasable, isTrue);
+  });
+
 }
