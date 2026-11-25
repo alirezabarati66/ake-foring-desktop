@@ -90,6 +90,8 @@ add_action('rest_api_init',function(){
  'callback'=>function($r){
  if(!function_exists('wc_create_order')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
  $items=$r->get_param('items');
+ $options=$r->get_param('options');
+ if(!is_array($options)) $options=[];
  $address=sanitize_text_field((string)$r->get_param('address'));
  $lat=$r->get_param('lat'); $lng=$r->get_param('lng');
  if(!is_array($items)||!count($items)||count($items)>50||!$address||!is_numeric($lat)||!is_numeric($lng)||abs((float)$lat)>90||abs((float)$lng)>180) return new WP_Error('invalid','Invalid request',['status'=>400]);
@@ -108,7 +110,21 @@ add_action('rest_api_init',function(){
  $o->set_shipping_address_1($address);
  $o->set_shipping_country('IR');
  $o->set_billing_country('IR');
- foreach($products as [$p,$qty]) $o->add_product($p,$qty);
+ foreach($products as [$p,$qty]) {
+   $item_id=$o->add_product($p,$qty);
+   $chosen=$options[(string)$p->get_id()] ?? [];
+   if($item_id && is_array($chosen)) {
+    $item=$o->get_item($item_id);
+    foreach($chosen as $attribute=>$value) {
+     $attribute=sanitize_text_field((string)$attribute);
+     $value=sanitize_text_field((string)$value);
+     if($attribute!=='' && $value!=='' && strlen($attribute)<=100 && strlen($value)<=150) {
+      $item->add_meta_data('مشخصه انتخابی: '.$attribute,$value,true);
+     }
+    }
+    $item->save();
+   }
+  }
  $o->update_meta_data('_ake_lat',(float)$lat);
  $o->update_meta_data('_ake_lng',(float)$lng);
  $o->update_meta_data('_ake_requires_shipping_quote','yes');
