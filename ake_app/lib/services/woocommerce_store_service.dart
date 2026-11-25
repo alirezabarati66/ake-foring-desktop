@@ -5,6 +5,10 @@ class WooCommerceStoreService {
   static const String _baseUrl = 'https://ake-forging.com/wp-json/wc/store/v1';
   final http.Client _client;
   WooCommerceStoreService({http.Client? client}) : _client = client ?? http.Client();
+  Future<List<StoreProduct>> fetchProductsPage({int page = 1, int perPage = 20}) async {
+    final response = await _get('/products?per_page=$perPage&page=$page');
+    return _decodeList(response).map(StoreProduct.fromJson).toList();
+  }
   Future<List<StoreProduct>> fetchProducts() async {
     final firstResponse = await _get('/products?per_page=100&page=1');
     final first = _decodeList(firstResponse);
@@ -15,6 +19,16 @@ class WooCommerceStoreService {
       products.addAll(_decodeList(response).map(StoreProduct.fromJson));
     }
     return products;
+  }
+  Future<List<StoreProduct>> fetchVariations(int parentId) async {
+    if (parentId <= 0) return const [];
+    final response = await _get('/products?type=variation&parent=$parentId&per_page=100');
+    return _decodeList(response).map((json) {
+      final normalized = Map<String, dynamic>.from(json);
+      normalized['type'] = 'variation';
+      normalized['parent'] ??= parentId;
+      return StoreProduct.fromJson(normalized);
+    }).where((variation) => variation.id > 0 && variation.inStock && variation.isPurchasable).toList();
   }
   Future<List<StoreCategory>> fetchCategories() async {
     final response = await _get('/products/categories?per_page=100');
