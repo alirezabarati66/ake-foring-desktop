@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'models/store_product.dart';
 import 'services/woocommerce_store_service.dart';
 
@@ -29,21 +30,21 @@ class Home extends StatelessWidget {
               subtitle: 'فناوری فورج، دقت تولید و کیفیت صنعتی',
               label: 'آریان کوب اسپادانا',
               colors: [_ink, Color(0xFF246A73)],
-              imageUrl: 'https://images.unsplash.com/photo-1661571094656-1887a27885db?fit=crop&w=1100&h=560&q=78&fm=jpg',
+              imageAsset: 'assets/images/forge-hero.svg',
             ),
             _CampaignBanner(
               title: 'تأمین مطمئن قطعات',
               subtitle: 'محصولات تخصصی برای صنعت خودرو',
               label: 'مجموعه محصولات',
               colors: [Color(0xFF006F6D), Color(0xFF17B6A8)],
-              imageUrl: 'https://images.unsplash.com/photo-1572367417026-d26cb9c9b922?fit=crop&w=1100&h=560&q=78&fm=jpg',
+              imageAsset: 'assets/images/forge-quality.svg',
             ),
             _CampaignBanner(
               title: 'از انتخاب تا سفارش',
               subtitle: 'مشخصات فنی و اطلاعات کالا در یک نگاه',
               label: 'خرید هوشمند',
               colors: [Color(0xFF2D415E), Color(0xFF647C95)],
-              imageUrl: 'https://images.unsplash.com/photo-1600683729960-0b586e23ec3b?fit=crop&w=1100&h=560&q=78&fm=jpg',
+              imageAsset: 'assets/images/forge-engineering.svg',
             ),
           ])),
           const SizedBox(height: 19),
@@ -83,8 +84,8 @@ class _SectionHeading extends StatelessWidget {
 class _CampaignBanner extends StatelessWidget {
   final String title, subtitle, label;
   final List<Color> colors;
-  final String imageUrl;
-  const _CampaignBanner({required this.title, required this.subtitle, required this.label, required this.colors, required this.imageUrl});
+  final String imageAsset;
+  const _CampaignBanner({required this.title, required this.subtitle, required this.label, required this.colors, required this.imageAsset});
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsetsDirectional.only(end: 9),
@@ -94,7 +95,7 @@ class _CampaignBanner extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
     ),
     child: Stack(children: [
-      Positioned.fill(child: Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink())),
+      Positioned.fill(child: SvgPicture.asset(imageAsset, fit: BoxFit.cover)),
       Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.black.withValues(alpha: .72), colors.last.withValues(alpha: .38)], begin: Alignment.centerRight, end: Alignment.centerLeft)))),
       Positioned(left: 14, bottom: -34, child: Container(width: 150, height: 150, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: .12), width: 26)))),
       Padding(padding: const EdgeInsets.all(23), child: Column(
