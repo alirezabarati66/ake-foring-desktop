@@ -5,6 +5,10 @@ class WooCommerceStoreService {
   static const String _baseUrl = 'https://ake-forging.com/wp-json/wc/store/v1';
   final http.Client _client;
   WooCommerceStoreService({http.Client? client}) : _client = client ?? http.Client();
+  Future<List<StoreProduct>> fetchProductsPage({int page = 1, int perPage = 20}) async {
+    final response = await _get('/products?per_page=$perPage&page=$page');
+    return _decodeList(response).map(StoreProduct.fromJson).toList();
+  }
   Future<List<StoreProduct>> fetchProducts() async {
     final firstResponse = await _get('/products?per_page=100&page=1');
     final first = _decodeList(firstResponse);
