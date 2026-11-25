@@ -322,7 +322,7 @@ class ProductTile extends StatelessWidget {
           const SizedBox(height: 7),
           Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: SizedBox(width: double.infinity, height: 36, child: FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: _ink, padding: const EdgeInsets.symmetric(horizontal: 5), visualDensity: VisualDensity.compact),
-            onPressed: p.inStock ? () => _chooseQuantity(context) : null,
+            onPressed: p.inStock && p.isPurchasable ? () => _chooseQuantity(context) : null,
             icon: const Icon(Icons.add_shopping_cart, size: 15), label: const Text('افزودن به سبد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
           ))),
         ]),
@@ -379,7 +379,7 @@ class Detail extends StatelessWidget {
         ],
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
-          onPressed: p.inStock ? () async {
+          onPressed: p.inStock && p.isPurchasable ? () async {
             final item = await _resolveCartProduct(context, p);
             if (item == null || !context.mounted) return;
             var count = 1;
