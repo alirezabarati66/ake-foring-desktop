@@ -16,6 +16,14 @@ class _MapPageState extends State<MapPage> {
   String? mapError;
 
   @override
+  void initState() {
+    super.initState();
+    controller.ready.then((_) { if (mounted) setState(() => mapReady = true); }).catchError((error) {
+      if (mounted) setState(() => mapError = error.toString());
+    });
+  }
+
+  @override
   void dispose() { controller.dispose(); super.dispose(); }
 
   void markReady() { if (mounted) setState(() => mapReady = true); }
