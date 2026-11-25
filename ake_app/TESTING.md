@@ -32,3 +32,15 @@ flutter build apk --release --target-platform android-arm64 --split-per-abi
 Output is normally under build/app/outputs/flutter-apk/ and usually called app-arm64-v8a-release.apk. Release signing is presently configured with DEBUG keys, so this artifact must NOT be distributed as a production signed app. Before production distribution, configure a unique application ID, versioning and a secure release keystore.
 
 The mobile checkout still requires a valid Neshan web key and careful WooCommerce quote/payment validation. No production order should be placed during unaudited tests. Do not overwrite a local, low-RAM android/gradle.properties without preserving a backup.
+
+
+## Requested mobile UI and order workflow changes (2026-11-26)
+- Storefront banners now use photographic industrial backgrounds with dark overlays; cards include an add-to-cart action and quantity/attribute selection sheet.
+- Product detail is an in-app route with its own app header, bottom navigation and Aali & Aali footer link.
+- Selected simple-product attributes are passed through checkout and saved as WooCommerce order-item metadata. True WooCommerce variable products are intentionally blocked from adding until variation IDs/price/stock are integrated; do not sell a variable item as a simple product.
+- Login now offers password or OTP. Registration asks for a password and confirmation, and verifies the phone by OTP before creating the account.
+- Root cause of Digits registration's Error: Unexpected user: Digits REST Addon 2.3 reads data.user_id from digits_create_user(), while Digits 8.6.2's digits_user_created_response returns success without user_id. The AKE Delivery plugin now adds the ID through that official filter. The updated wordpress/ake-delivery.php must be deployed to the existing ake mokamel/ake-delivery.php plugin on WordPress before registration is expected to work. Do not edit vendor Digits files.
+- Courier dashboard now includes assigned order, customer/phone/address/total, external navigation, and status progression (assigned -> accepted -> picked_up -> out_for_delivery -> delivered). The matching REST status endpoint is in wordpress/ake-delivery.php; it must be deployed with the same plugin update.
+- Neshan: the Flutter SDK uses the Neshan Web SDK on mobile WebView; use a Web key, do not restrict domain/IP for the app's key, and ensure the key has a base-map tile service enabled. Runtime errors are now surfaced in the map screen. Neshan Web key is passed at build with --dart-define=NESHAN_WEB_KEY=...; never commit the key.
+- The Aali & Aali footer link opens https://aalioaali.com.
+- Build/test status must be read from the latest GitHub Actions run before release. Manual QA remains required for SMS registration, password login, map tile rendering, order item metadata, and courier status changes.
