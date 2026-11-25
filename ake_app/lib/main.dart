@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'auth_page.dart';
+import 'storefront.dart';
 import 'checkout_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,7 @@ import 'services/woocommerce_store_service.dart';
 
 const teal=Color(0xFF01ADA5), grey=Color(0xFF57595B), bg=Color(0xFFF3F6F6);
 void main()=>runApp(const AkeApp());
-class AkeApp extends StatelessWidget { const AkeApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(title:'AKE Forging',debugShowCheckedModeBanner:false,theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:teal),scaffoldBackgroundColor:bg),home:const Shell()); }
+class AkeApp extends StatelessWidget { const AkeApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(title:'AKE Forging',debugShowCheckedModeBanner:false,theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:teal),scaffoldBackgroundColor:bg,appBarTheme:const AppBarTheme(elevation:0,scrolledUnderElevation:0,backgroundColor:Colors.white),cardTheme:CardThemeData(elevation:0,shape:RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(18))))),home:const Shell()); }
 
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -57,10 +58,12 @@ class _ShellState extends State<Shell> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: const Text(
-            'آریان کوب اسپادانا',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
+          title: Row(children: const [
+            Image(image: NetworkImage('https://www.ake-forging.com/wp-content/uploads/2019/09/logo-300x51.png'), width: 112, height: 30, fit: BoxFit.contain,
+              errorBuilder: null),
+            SizedBox(width: 8),
+            Expanded(child: Text('آریان کوب اسپادانا', overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14))),
+          ]),
           actions: [
             IconButton(
               onPressed: () => setState(() => tab = 3),
@@ -137,131 +140,6 @@ class _ShellState extends State<Shell> {
         Navigator.pop(context);
         setState(() => tab = index);
       },
-    );
-  }
-}
-
-class Home extends StatelessWidget{final ValueChanged<StoreProduct> onAdd;const Home({super.key,required this.onAdd});@override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(color:teal,borderRadius:BorderRadius.circular(20)),child:const Text('مهندسی قدرت، کیفیت در هر ضربه\nتولید قطعات فورج با دانش فنی روز',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.bold))),const SizedBox(height:16),const Text('محصولات فروشگاه',style:TextStyle(fontSize:18,fontWeight:FontWeight.bold)),SizedBox(height:650,child:ProductList(onAdd:onAdd))]);}
-class Shop extends StatelessWidget{final ValueChanged<StoreProduct> onAdd;const Shop({super.key,required this.onAdd});@override Widget build(BuildContext c)=>Column(children:[const Padding(padding:EdgeInsets.all(16),child:Text('فروشگاه محصولات',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold))),Expanded(child:ProductList(onAdd:onAdd))]);}
-class ProductList extends StatefulWidget{final ValueChanged<StoreProduct> onAdd;const ProductList({super.key,required this.onAdd});@override State<ProductList> createState()=>_ProductListState();}
-class _ProductListState extends State<ProductList>{final svc=WooCommerceStoreService();List<StoreProduct> items=[];bool busy=true;String? error;@override void initState(){super.initState();load();} @override void dispose(){svc.dispose();super.dispose();}
- Future<void> load()async{setState((){busy=true;error=null;});try{final r=await svc.fetchProducts();if(mounted)setState((){items=r;busy=false;});}catch(e){if(mounted)setState((){error=e.toString();busy=false;});}}
- @override Widget build(BuildContext c){if(busy)return const Center(child:CircularProgressIndicator(color:teal));if(error!=null)return Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Text(error!,textAlign:TextAlign.center),FilledButton(onPressed:load,child:const Text('تلاش مجدد'))]));return RefreshIndicator(onRefresh:load,child:GridView.builder(padding:const EdgeInsets.all(12),itemCount:items.length,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,mainAxisSpacing:10,crossAxisSpacing:10,childAspectRatio:.62),itemBuilder:(c,i)=>ProductTile(p:items[i],add:widget.onAdd)));}}
-class ProductTile extends StatelessWidget {
-  final StoreProduct p;
-  final ValueChanged<StoreProduct> add;
-  const ProductTile({super.key, required this.p, required this.add});
-
-  void _open(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => Detail(p: p, add: add)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _open(context),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Center(
-                  child: p.imageUrl.isEmpty
-                      ? const Icon(Icons.precision_manufacturing, color: teal, size: 48)
-                      : Image.network(
-                          p.imageUrl,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stack) =>
-                              const Icon(Icons.precision_manufacturing, color: teal, size: 48),
-                        ),
-                ),
-              ),
-              Text(
-                p.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                p.sku.isNotEmpty ? 'کد: ${p.sku}' : 'شناسه: ${p.id}',
-                style: const TextStyle(color: grey, fontSize: 11),
-              ),
-              Text(
-                p.displayPrice.isNotEmpty ? p.displayPrice : 'استعلام قیمت',
-                style: const TextStyle(color: teal, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: teal),
-                  onPressed: () => _open(context),
-                  child: const Text('مشاهده محصول'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class Detail extends StatelessWidget {
-  final StoreProduct p;
-  final ValueChanged<StoreProduct> add;
-  const Detail({super.key, required this.p, required this.add});
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('جزئیات محصول')),
-        body: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            SizedBox(
-              height: 260,
-              child: p.imageUrl.isEmpty
-                  ? const Icon(Icons.precision_manufacturing, color: teal, size: 80)
-                  : Image.network(
-                      p.imageUrl,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stack) =>
-                          const Icon(Icons.precision_manufacturing, color: teal, size: 80),
-                    ),
-            ),
-            const SizedBox(height: 16),
-            Text(p.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text(p.sku.isNotEmpty ? 'کد فنی: ${p.sku}' : 'شناسه: ${p.id}'),
-            Text(
-              p.displayPrice.isNotEmpty ? p.displayPrice : 'استعلام قیمت',
-              style: const TextStyle(color: teal, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(p.inStock ? 'موجود' : 'ناموجود'),
-            const SizedBox(height: 20),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: teal),
-              onPressed: p.inStock
-                  ? () {
-                      add(p);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('به سبد خرید اضافه شد')),
-                      );
-                    }
-                  : null,
-              child: const Text('افزودن به سبد خرید'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
