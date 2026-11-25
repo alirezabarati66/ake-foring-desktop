@@ -159,8 +159,8 @@ add_action('rest_api_init',function(){
   'methods'=>'POST',
   'permission_callback'=>function(){return is_user_logged_in() && current_user_can('ake_deliver_orders');},
   'callback'=>function($request){
-   $order=wc_get_order((int)$request['id']);
    if(!function_exists('wc_get_order')) return new WP_Error('unavailable','WooCommerce unavailable',['status'=>503]);
+   $order=wc_get_order((int)$request['id']);
    if(!$order || (int)$order->get_meta('_ake_courier_id')!==get_current_user_id()) return new WP_Error('forbidden','Mission not assigned to this courier',['status'=>403]);
    $status=sanitize_key((string)$request->get_param('status'));
    $allowed=['accepted','picked_up','out_for_delivery','delivered'];
