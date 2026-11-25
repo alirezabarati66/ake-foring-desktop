@@ -336,6 +336,53 @@ class Detail extends StatelessWidget {
   final AddProduct add;
   final ValueChanged<int> onNavigate;
   const Detail({super.key, required this.p, required this.add, required this.onNavigate});
+
+  Future<void> _addToCart(BuildContext context) async {
+    if (!p.inStock) return;
+    if (!p.isPurchasable) {
+      await launchUrl(Uri.parse(p.permalink), mode: LaunchMode.externalApplication);
+      return;
+    }
+    final item = await _resolveCartProduct(context, p);
+    if (item == null || !context.mounted) return;
+    var count = 1;
+    final selected = <String, String>{for (final a in item.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              if (item.type == 'variation')
+                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty))
+                  Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text('${attribute.name}: ${attribute.values.join('، ')}')),
+              if (item.type != 'variation')
+                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
+                  DropdownButtonFormField<String>(
+                    initialValue: selected[attribute.name],
+                    decoration: InputDecoration(labelText: attribute.name),
+                    items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                    onChanged: (v) { if (v != null) selected[attribute.name] = v; },
+                  ),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
+                Text('$count', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                IconButton(onPressed: count < 99 ? () => setSheet(() => count++) : null, icon: const Icon(Icons.add_circle_outline)),
+              ]),
+              SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('افزودن به سبد خرید'))),
+            ]),
+          ),
+        ),
+      ),
+    );
+    if (ok == true) {
+      add(item, count, Map<String, String>.from(selected));
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد')));
+    }
+  }
   @override
   Widget build(BuildContext context) => Directionality(
     textDirection: TextDirection.rtl,
@@ -379,28 +426,7 @@ class Detail extends StatelessWidget {
         ],
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
-          onPressed: !p.inStock ? null : !p.isPurchasable ? () => launchUrl(Uri.parse(p.permalink), mode: LaunchMode.externalApplication) : () async {
-            final item = await _resolveCartProduct(context, p);
-            if (item == null || !context.mounted) return;
-            var count = 1;
-            final selected = <String, String>{for (final a in item.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
-            final ok = await showModalBottomSheet<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              if (item.type == 'variation')
-                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty))
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text('${attribute.name}: ${attribute.values.join('، ')}')),
-              if (item.type != 'variation')
-                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
-                  DropdownButtonFormField<String>(value: selected[attribute.name], decoration: InputDecoration(labelText: attribute.name), items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) selected[attribute.name] = v; }),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
-                Text('$count', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-                IconButton(onPressed: count < 99 ? () => setSheet(() => count++) : null, icon: const Icon(Icons.add_circle_outline)),
-              ]),
-              SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('افزودن به سبد خرید'))),
-            ])))));
-            if (ok == true) { add(item, count, Map<String, String>.from(selected)); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد'))); }
-          } : null,
+          onPressed: !p.inStock ? null : () => _addToCart(context),
           icon: Icon(p.isPurchasable ? Icons.shopping_bag_outlined : Icons.open_in_new), label: Text(p.isPurchasable ? 'افزودن به سبد خرید' : 'استعلام قیمت در سایت'),
         )),
       ]),
