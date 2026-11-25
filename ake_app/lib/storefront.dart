@@ -272,7 +272,10 @@ class ProductTile extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [const Expanded(child: Text('افزودن به سبد خرید', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: _ink))), IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close))]),
             ListTile(contentPadding: EdgeInsets.zero, leading: item.imageUrl.isEmpty ? const Icon(Icons.settings) : Image.network(item.imageUrl, width: 58, height: 58, fit: BoxFit.contain), title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(item.displayPrice.isEmpty ? 'استعلام قیمت' : item.displayPrice)),
-            if (item.type != 'variable') ...[
+            if (item.type == 'variation') ...[
+              for (final attribute in item.attributes.where((a) => a.values.isNotEmpty))
+                Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('${attribute.name}: ${attribute.values.join('، ')}', style: const TextStyle(color: _muted, fontSize: 12)))),
+            ] else ...[
               for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
                 Padding(padding: const EdgeInsets.only(bottom: 9), child: DropdownButtonFormField<String>(
                   value: selected[attribute.name],
@@ -383,8 +386,12 @@ class Detail extends StatelessWidget {
             final selected = <String, String>{for (final a in item.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
             final ok = await showModalBottomSheet<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
               const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
-                DropdownButtonFormField<String>(value: selected[attribute.name], decoration: InputDecoration(labelText: attribute.name), items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) selected[attribute.name] = v; }),
+              if (item.type == 'variation')
+                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty))
+                  Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Text('${attribute.name}: ${attribute.values.join('، ')}')),
+              if (item.type != 'variation')
+                for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
+                  DropdownButtonFormField<String>(value: selected[attribute.name], decoration: InputDecoration(labelText: attribute.name), items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) selected[attribute.name] = v; }),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
                 Text('$count', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
