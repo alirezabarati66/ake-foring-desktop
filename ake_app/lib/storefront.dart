@@ -294,7 +294,7 @@ class Detail extends StatelessWidget {
         backgroundColor: _ink,
         foregroundColor: Colors.white,
         title: const Text('جزئیات محصول', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: [IconButton(onPressed: () => onNavigate(3), icon: const Icon(Icons.shopping_bag_outlined))],
+        actions: [IconButton(onPressed: () { Navigator.of(context).pop(); onNavigate(3); }, icon: const Icon(Icons.shopping_bag_outlined))],
       ),
       body: ListView(padding: const EdgeInsets.fromLTRB(14, 14, 14, 20), children: [
         Container(
