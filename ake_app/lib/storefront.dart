@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'models/store_product.dart';
 import 'services/woocommerce_store_service.dart';
 
@@ -346,7 +347,9 @@ class Detail extends StatelessWidget {
           icon: const Icon(Icons.shopping_bag_outlined), label: const Text('افزودن به سبد خرید'),
         )),
       ]),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
+        InkWell(onTap: () => launchUrl(Uri.parse('https://aalioaali.com'), mode: LaunchMode.externalApplication), child: Container(width: double.infinity, color: Colors.white, padding: const EdgeInsets.symmetric(vertical: 6), child: const Text('طراحی و توسعه توسط مجموعه عالی و عالی', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: _accent, fontWeight: FontWeight.w800)))),
+        NavigationBar(
         selectedIndex: 1,
         onDestinationSelected: (index) { Navigator.of(context).pop(); onNavigate(index); },
         backgroundColor: Colors.white,
@@ -357,7 +360,8 @@ class Detail extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), label: 'سبد خرید'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'حساب من'),
         ],
-      ),
+        ),
+      ]),
     ),
   );
 }
