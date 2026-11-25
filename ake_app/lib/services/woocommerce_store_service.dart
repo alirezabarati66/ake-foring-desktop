@@ -28,7 +28,7 @@ class WooCommerceStoreService {
       normalized['type'] = 'variation';
       normalized['parent'] ??= parentId;
       return StoreProduct.fromJson(normalized);
-    }).where((variation) => variation.id > 0 && variation.inStock).toList();
+    }).where((variation) => variation.id > 0 && variation.inStock && variation.isPurchasable).toList();
   }
   Future<List<StoreCategory>> fetchCategories() async {
     final response = await _get('/products/categories?per_page=100');
