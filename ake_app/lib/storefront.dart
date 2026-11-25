@@ -204,6 +204,53 @@ class _ProductListState extends State<ProductList> {
   }
 }
 
+Future<StoreProduct?> _resolveCartProduct(BuildContext context, StoreProduct product) async {
+  if (product.type != 'variable') return product;
+  final service = WooCommerceStoreService();
+  List<StoreProduct> variations;
+  try {
+    variations = await service.fetchVariations(product.id);
+  } catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('دریافت اندازه‌ها ناموفق بود: $e')));
+    return null;
+  } finally {
+    service.dispose();
+  }
+  if (!context.mounted) return null;
+  if (variations.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('برای این محصول وارییشنِ موجود و قابل خرید ثبت نشده است.')));
+    return null;
+  }
+  return showModalBottomSheet<StoreProduct>(
+    context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+    builder: (ctx) => Directionality(textDirection: TextDirection.rtl, child: Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * .72),
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Text('انتخاب اندازه و مدل', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+        const SizedBox(height: 8),
+        Flexible(child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: variations.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (ctx, index) {
+            final v = variations[index];
+            final spec = v.attributes.map((a) => '${a.name}: ${a.values.join('، ')}').where((s) => !s.endsWith(': ')).join(' | ');
+            return ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.straighten)),
+              title: Text(spec.isEmpty ? 'گزینه ${index + 1}' : spec, style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(v.displayPrice.isEmpty ? 'استعلام قیمت' : v.displayPrice),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () => Navigator.pop(ctx, v),
+            );
+          },
+        )),
+      ]),
+    )),
+  );
+}
+
 class ProductTile extends StatelessWidget {
   final StoreProduct p;
   final AddProduct add;
@@ -211,8 +258,10 @@ class ProductTile extends StatelessWidget {
   const ProductTile({super.key, required this.p, required this.add, required this.onNavigate});
 
   Future<void> _chooseQuantity(BuildContext context) async {
+    final item = await _resolveCartProduct(context, p);
+    if (item == null || !context.mounted) return;
     var quantity = 1;
-    final selected = <String, String>{for (final a in p.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
+    final selected = <String, String>{for (final a in item.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
     await showModalBottomSheet<void>(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(
@@ -222,11 +271,9 @@ class ProductTile extends StatelessWidget {
           decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [const Expanded(child: Text('افزودن به سبد خرید', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: _ink))), IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close))]),
-            ListTile(contentPadding: EdgeInsets.zero, leading: p.imageUrl.isEmpty ? const Icon(Icons.settings) : Image.network(p.imageUrl, width: 58, height: 58, fit: BoxFit.contain), title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(p.displayPrice.isEmpty ? 'استعلام قیمت' : p.displayPrice)),
-            if (p.type == 'variable') ...[
-              const Text('این کالا دارای وارییشن است و تا اتصال شناسه دقیق هر وارییشن، افزودن آن غیرفعال است.', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
-            ] else ...[
-              for (final attribute in p.attributes.where((a) => a.values.isNotEmpty).take(5))
+            ListTile(contentPadding: EdgeInsets.zero, leading: item.imageUrl.isEmpty ? const Icon(Icons.settings) : Image.network(item.imageUrl, width: 58, height: 58, fit: BoxFit.contain), title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(item.displayPrice.isEmpty ? 'استعلام قیمت' : item.displayPrice)),
+            if (item.type != 'variable') ...[
+              for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
                 Padding(padding: const EdgeInsets.only(bottom: 9), child: DropdownButtonFormField<String>(
                   value: selected[attribute.name],
                   decoration: InputDecoration(labelText: attribute.name, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
@@ -243,7 +290,7 @@ class ProductTile extends StatelessWidget {
             ]),
             SizedBox(width: double.infinity, child: FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.symmetric(vertical: 14)),
-              onPressed: p.type == 'variable' ? null : () { add(p, quantity, Map<String, String>.from(selected)); Navigator.pop(ctx); },
+              onPressed: item.type == 'variable' ? null : () { add(item, quantity, Map<String, String>.from(selected)); Navigator.pop(ctx); },
               icon: const Icon(Icons.shopping_bag_outlined), label: const Text('تأیید و افزودن به سبد'),
             )),
           ]),
@@ -272,7 +319,7 @@ class ProductTile extends StatelessWidget {
           const SizedBox(height: 7),
           Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 8), child: SizedBox(width: double.infinity, height: 36, child: FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: _ink, padding: const EdgeInsets.symmetric(horizontal: 5), visualDensity: VisualDensity.compact),
-            onPressed: p.inStock && p.type != 'variable' ? () => _chooseQuantity(context) : null,
+            onPressed: p.inStock ? () => _chooseQuantity(context) : null,
             icon: const Icon(Icons.add_shopping_cart, size: 15), label: const Text('افزودن به سبد', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
           ))),
         ]),
@@ -329,12 +376,14 @@ class Detail extends StatelessWidget {
         ],
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.all(15)),
-          onPressed: p.inStock && p.type != 'variable' ? () async {
+          onPressed: p.inStock ? () async {
+            final item = await _resolveCartProduct(context, p);
+            if (item == null || !context.mounted) return;
             var count = 1;
-            final selected = <String, String>{for (final a in p.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
+            final selected = <String, String>{for (final a in item.attributes) if (a.values.isNotEmpty) a.name: a.values.first};
             final ok = await showModalBottomSheet<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
               const Text('تعداد مورد نیاز', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              for (final attribute in p.attributes.where((a) => a.values.isNotEmpty).take(5))
+              for (final attribute in item.attributes.where((a) => a.values.isNotEmpty).take(5))
                 DropdownButtonFormField<String>(value: selected[attribute.name], decoration: InputDecoration(labelText: attribute.name), items: attribute.values.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) { if (v != null) selected[attribute.name] = v; }),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 IconButton(onPressed: count > 1 ? () => setSheet(() => count--) : null, icon: const Icon(Icons.remove_circle_outline)),
@@ -343,7 +392,7 @@ class Detail extends StatelessWidget {
               ]),
               SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('افزودن به سبد خرید'))),
             ])))));
-            if (ok == true) { add(p, count, Map<String, String>.from(selected)); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد'))); }
+            if (ok == true) { add(item, count, Map<String, String>.from(selected)); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('به سبد خرید اضافه شد'))); }
           } : null,
           icon: const Icon(Icons.shopping_bag_outlined), label: const Text('افزودن به سبد خرید'),
         )),
