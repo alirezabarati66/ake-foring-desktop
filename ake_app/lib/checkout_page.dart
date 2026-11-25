@@ -5,7 +5,8 @@ import 'map_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   final Map<int,int> items;
-  const CheckoutPage({super.key,required this.items});
+  final Map<int, Map<String, String>> selections;
+  const CheckoutPage({super.key,required this.items,required this.selections});
   @override
   State<CheckoutPage> createState()=>_CheckoutPageState();
 }
@@ -24,7 +25,7 @@ class _CheckoutPageState extends State<CheckoutPage>{
       if(token==null){if(mounted)setState(()=>error='ابتدا از بخش حساب کاربری وارد شوید');return;}
       final api=DeliveryService(token);
       await api.me();
-      final result=await api.request('order-request',body:{'items':widget.items.map((k,v)=>MapEntry(k.toString(),v)),'address':address.text.trim(),'lat':location![0],'lng':location![1]});
+      final result=await api.request('order-request',body:{'items':widget.items.map((k,v)=>MapEntry(k.toString(),v)),'options':widget.selections.map((k,v)=>MapEntry(k.toString(),v)),'address':address.text.trim(),'lat':location![0],'lng':location![1]});
       if(result is! Map || result['id'] is! int)throw Exception();
       if(mounted)Navigator.pop(context,result['id']);
     }catch(_){if(mounted)setState(()=>error='ثبت سفارش تایید نشد. قبل از تلاش مجدد، سفارش‌های حساب را بررسی کنید.');}
