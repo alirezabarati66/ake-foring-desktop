@@ -31,7 +31,7 @@ class ProductAttribute {
   const ProductAttribute({required this.name, required this.values});
   factory ProductAttribute.fromJson(Map<String, dynamic> json) => ProductAttribute(
     name: (json['name'] ?? '').toString(),
-    values: ((json['terms'] as List<dynamic>?) ?? (json['options'] as List<dynamic>?) ?? const [])
+    values: ((json['terms'] as List<dynamic>?) ?? (json['options'] as List<dynamic>?) ?? (json['value'] is String && (json['value'] as String).isNotEmpty ? [json['value']] : const []))
       .map((item) => item is Map ? (item['name'] ?? item['slug'] ?? '').toString() : item.toString())
       .where((value) => value.isNotEmpty).toList(),
   );
