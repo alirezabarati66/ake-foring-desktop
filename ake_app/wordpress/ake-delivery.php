@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: AKE Delivery API
- * Version: 0.1.0
+ * Version: 0.2.0
  */
 defined('ABSPATH') || exit;
 // Digits REST API 2.3 omits user_id from a successful registration response.
